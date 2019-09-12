@@ -24,16 +24,16 @@ df = pd.read_csv(
 doc.add_text(df.head())# handout: exclude
 doc.show()# handout: exclude
 
-"""
-Some setup code for the KNN classifier; data splitting and scaling:
-"""
 from sklearn import preprocessing# handout: exclude
 le = preprocessing.LabelEncoder()# handout: exclude
 
 df = df.apply(le.fit_transform)# handout: exclude
 
-doc.add_text(df.head())# handout: exclude
-doc.show()# handout: exclude
+
+"""
+Some setup code for the KNN classifier; data splitting and scaling:
+"""
+
 from sklearn.model_selection import train_test_split
 train_data, test_data = train_test_split(df, test_size=0.2)
 
