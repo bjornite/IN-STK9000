@@ -49,6 +49,17 @@ class NeuralBanker(BankerBase):
                       optimizer=RMSprop(),
                       metrics=['accuracy'])
         return model
+    
+    def get_proba(X):
+        return self.model.predict(X)
+    
+    def expected_utility(X):
+        p = self.get_proba(X)
+        gain = self.calculate_gain(X)
+        return X['amount']*(1-p)+gain*p
+    
+    def calculate_gain(X, interest_rate):
+        return X['amount']*((1 + interest_rate)**(X['duration']) - 1)
         
     def fit(self, X, y):
         y = self.parse_y(y.values.reshape(-1,1))
@@ -56,9 +67,7 @@ class NeuralBanker(BankerBase):
         self.model.fit(X, y)
         
     def get_best_action(self, X):
-        pred = self.model.predict(X)
-        print(pred)
-        return (pred).reshape(-1).astype(int)
+        return (self.expected_utility(X) > 0).astype(int)
 
 
 if __name__ == '__main__':
