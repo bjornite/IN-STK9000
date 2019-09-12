@@ -57,7 +57,7 @@ def get_average_utility(banker,  interest_rate, n_folds=5):
     return utils.mean(), utils.std()
 
 
-def run(interest_rate=0.05):
+def run(interest_rate=0.005):
     for cls in BankerBase.__subclasses__():
         print(cls.__name__, get_average_utility(
             cls(interest_rate=interest_rate),

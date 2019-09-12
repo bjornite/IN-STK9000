@@ -31,13 +31,6 @@ df = pd.read_csv(
 4  vhigh        vhigh     2       2     med    med  unacc
 </pre>
 <div class="markdown">Some setup code for the KNN classifier; data splitting and scaling:</div>
-<pre class="message">   Buying  Maintenaince  Doors  Persons  Luggage  Safety  Class
-0       3             3      0        0        2       1      2
-1       3             3      0        0        2       2      2
-2       3             3      0        0        2       0      2
-3       3             3      0        0        1       1      2
-4       3             3      0        0        1       2      2
-</pre>
 <pre><code class="python">from sklearn.model_selection import train_test_split
 train_data, test_data = train_test_split(df, test_size=0.2)
 
@@ -65,7 +58,7 @@ mean_xv_scores = [s.mean() for s in k_fold_scores]
 plt.errorbar(neighbor_ks,
  mean_xv_scores,
  yerr=[s.std() for s in k_fold_scores])</code></pre>
-<img src="figure-0.png" /><div class="markdown">## Results of using different k's on the test-set
+<div class="markdown">## Results of using different k's on the test-set
 This code compares KNN models trained with different k on the testset,
 plotted alongside results on the training data and the results from the cross-validation.</div>
 <pre><code class="python">models = [KNeighborsClassifier(n_neighbors=k).fit(train_data_s[features],
@@ -78,7 +71,7 @@ plt.semilogx(neighbor_ks, train_scores,
  neighbor_ks, test_scores,
  neighbor_ks, mean_xv_scores)
 plt.legend(["Train", "Test", "XV"])</code></pre>
-<img src="figure-1.png" /><div class="markdown">## Conclusion
+<div class="markdown">## Conclusion
 We expect the model to be slightly more accurate than the cross-validation on the test-set because the cross-validaton models are trained on a slightly smaller dataset. That is also what we observe in the above graph.
 
 For a deployment of the model to the "real-world", we'd assume the model to perform slightly worse (have a lower accuracy than shown in the graphs), because of possible sampling bias in the dataset we've used. Also, the dataset is a representation of only a (small) part of the 'real world', which means that the accuracy will always be lower.
