@@ -15,6 +15,8 @@ quantitative_features = list(filter(lambda x: x not in numerical_features, featu
 X = pandas.get_dummies(df, columns=quantitative_features, drop_first=True)
 encoded_features = list(filter(lambda x: x != target, X.columns))
 
+norm = 1/X.std()
+
 ## Test function
 def test_decision_maker(X_test, y_test, interest_rate, decision_maker):
     n_test_examples = len(X_test)
@@ -51,7 +53,7 @@ from sklearn.model_selection import train_test_split
 n_tests = 100
 utility = 0
 for iter in range(n_tests):
-    X_train, X_test, y_train, y_test = train_test_split(X[encoded_features], X[target], test_size=0.2)
+    X_train, X_test, y_train, y_test = train_test_split(X*norm[encoded_features], X[target], test_size=0.2)
     decision_maker.set_interest_rate(interest_rate)
     decision_maker.fit(X_train, y_train)
     utility += test_decision_maker(X_test, y_test, interest_rate, decision_maker)
