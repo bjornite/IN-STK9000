@@ -31,17 +31,20 @@ class kNNbanker(BankerBase):
     
     def __init__(self, interest_rate):
         self.interest_rate = interest_rate
-    
+        
     def kNN(self, X, y):
+
         model = KNeighborsClassifier(n_neighbors = 15)
         return model
     
     def get_proba(self, X):
         return self.model.predict(X)
 
-    def predict_proba(self, X):
-        probability = metrics.accuracy_score(y, self.get_proba)
-        print(probability)
+    def predict_proba(self, predict_X):
+        #predict_probability = metrics.accuracy_score(y, self.get_proba)
+        predict_probability = self.get_proba(predict_X)
+        print(predict_probability)
+        return predict_probability
 
     """ Use this probability for the expected utility""" 
     
@@ -49,16 +52,20 @@ class kNNbanker(BankerBase):
         p = self.predict_proba(X)
         gain = self.calculate_gain(X)
         return gain.values*p.flatten()-X['amount'].values*(1-p.flatten())
-
-        return gain*p - X['amount']*(1-p) 
     
     def calculate_gain(self, X):
         return X['amount']*((1 + self.interest_rate)**(X['duration']) - 1)
         
+    def parse_y(self, y):
+        y[np.where(y == 2)] = 0
+        return y
+
     def fit(self, X, y):
+        y = self.parse_y(y.values.reshape(-1,1))
         self.model = self.kNN(X, y)
-        self.model.fit(X, y)
-        
+        self.model.fit(X.values, y)
+
+
     def get_best_action(self, X):
         actions = (self.expected_utility(X) > 0).astype(int).flatten()
         actions[np.where(actions == 0)] = 2
