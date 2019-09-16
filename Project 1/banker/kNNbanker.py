@@ -37,19 +37,16 @@ class kNNbanker(BankerBase):
         model = KNeighborsClassifier(n_neighbors = 15)
         return model
     
-    def get_proba(self, X):
-        return self.model.predict(X)
+    def prediction(self, y):
+        return self.model.predict(y)
 
-    def predict_proba(self, predict_X):
-        #predict_probability = metrics.accuracy_score(ytest, ypred)
-        predict_probability = self.get_proba(predict_X)
-        print(predict_probability)
-        return predict_probability
+    def get_proba(self, y):
+        return metrics.accuracy_score((y), self.prediction(y))
 
     """ Use this probability for the expected utility""" 
     
     def expected_utility(self, X):
-        p = self.predict_proba(X)
+        p = self.get_proba(X)
         gain = self.calculate_gain(X)
         return gain.values*p.flatten()-X['amount'].values*(1-p.flatten())
     
