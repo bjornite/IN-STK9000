@@ -31,7 +31,7 @@ def get_data():
 
 
 def calculate_gain(X, interest_rate):
-    return X['amount']*((1 + interest_rate)**(X['duration']/12) - 1)
+    return X['amount']*((1 + interest_rate)**(X['duration']) - 1)
 
 
 class UtilityCalculator(object):
