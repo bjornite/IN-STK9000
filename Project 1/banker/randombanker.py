@@ -1,3 +1,4 @@
+from imblearn.under_sampling import RandomUnderSampler
 from banker import BankerBase, run
 from random import choice
 from keras.models import Sequential
@@ -32,15 +33,18 @@ class RandomBanker(BankerBase):
 class NeuralBanker(BankerBase):
 
     model = None
+    rus = RandomUnderSampler(random_state=42)
     
-    def __init__(self, interest_rate, layer_sizes=[16,8], optimizer="Adam", loss="binary_crossentropy"):
+    def __init__(self, interest_rate, layer_sizes=[16,8], 
+                optimizer="Adam", 
+                loss="binary_crossentropy"):
         self.interest_rate = interest_rate
         self.layer_sizes = layer_sizes
         self.optimizer = optimizer
         self.loss = loss
         
     def parse_y(self, y):
-        y[np.where(y == 2)] = 0 
+        y[np.where(y == 2)] = 0
         return y
     
     def parse_X(self, X):
@@ -49,14 +53,11 @@ class NeuralBanker(BankerBase):
 
     def build_network(self, X, y):
         model = Sequential()
-        model.add(BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, beta_initializer='zeros', gamma_initializer='ones', moving_mean_initializer='zeros', moving_variance_initializer='ones', beta_regularizer=None, gamma_regularizer=None, beta_constraint=None, gamma_constraint=None))
-        model.add(Dense(self.layer_sizes[0], activation='elu',kernel_regularizer=regularizers.l2(0.001)))
-        model.add(Dense(self.layer_sizes[1], activation='elu',kernel_regularizer=regularizers.l2(0.001)))
-        #model.add(Dropout(0.1))
-        #model.add(Dense(8, activation='elu'))
-        #model.add(Dropout(0.2))
+        model.add(BatchNormalization())
+        for layer_size in self.layer_sizes:
+            model.add(Dense(layer_size, activation='elu',kernel_regularizer=regularizers.l2(0.001)))
         model.add(Dense(1, activation='sigmoid'))
-        model.compile(loss='binary_crossentropy',
+        model.compile(loss=self.loss,
                       optimizer=self.optimizer,
                       metrics=['accuracy'])
         return model
@@ -77,7 +78,10 @@ class NeuralBanker(BankerBase):
     def fit(self, X, y):
         y = self.parse_y(y.values.reshape(-1,1))
         X = self.parse_X(X)
+
         # Over-sampling to solve problem with unbalanced dataset
+        # Tried this and it didn't work well
+
         #rom imblearn.over_sampling import SMOTE
         #os = SMOTE(random_state=0)
         #columns = X.columns
@@ -85,11 +89,9 @@ class NeuralBanker(BankerBase):
         #os_data_X = pd.DataFrame(data=os_data_X,columns=columns )
         #os_data_y= pd.DataFrame(data=os_data_y,columns=['y'])
 
-        from imblearn.under_sampling import RandomUnderSampler
-        rus = RandomUnderSampler(random_state=42)
-        os_data_X, os_data_y = rus.fit_resample(X, y)
+        os_data_X, os_data_y = self.rus.fit_resample(X, y)
         self.model = self.build_network(os_data_X, os_data_y)
-        self.model.fit(os_data_X, os_data_y, epochs = 3, validation_split=0.05)
+        self.model.fit(os_data_X, os_data_y, epochs = 10, batch_size=32, validation_split=0.05)
         
     def get_best_action(self, X):
         actions = (self.expected_utility(X) > 0).astype(int).flatten()

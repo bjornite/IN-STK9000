@@ -50,12 +50,11 @@ class DataHolder(object):
     X, y = get_data()
 
 
-def get_average_utility(banker,  interest_rate, n_folds=5):
+def get_average_utility(banker,  interest_rate, n_folds=10):
     utils = cross_val_score(banker, DataHolder.X, DataHolder.y,
                             scoring=UtilityCalculator(interest_rate),
                             cv=n_folds)
     return utils.mean(), utils.std()
-
 
 def run(interest_rate=0.005):
     for cls in BankerBase.__subclasses__():
