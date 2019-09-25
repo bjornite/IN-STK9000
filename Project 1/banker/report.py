@@ -27,32 +27,30 @@ sns.countplot(x = df[target], data = df)
 doc.add_figure(plt.gcf()) # handout: exclude
 doc.show() # handout: exclude
 """
-The percentage of the outcome being 0, or not repaid, is 30%, while the percentage for the outcome being 1, or repaid, is 70%. For our model it is important to balance out our data, because the probability of a new data point belonging to the majority class (here ‘repaid’) is much higher than it belonging to the minority class (Yen & Lee, 2008). Therefore, a machine learning algorithm is more likely to classify new observations to the majority class. Meaning, In this case, if a model would predict only ones, it would be right 70% of the time.
-In order to balance the data we use the imbalanced-learn package in Python. 
+The percentage of the outcome being 0, or not repaid, is 30%, while the percentage for the outcome being 1, or repaid, is 70%.
 """
-def underSample(X, y):
-    from imblearn.under_sampling import RandomUnderSampler
-    rus = RandomUnderSampler(random_state=42)
-    return rus.fit_resample(X, y)
 
-def overSample(X, y):
-    from imblearn.over_sampling import SMOTE
-    os = SMOTE(random_state=0)
-    columns = X.columns
-    os_data_X,os_data_y=os.fit_sample(X, y)
-    os_data_X = pd.DataFrame(data=os_data_X,columns=columns )
-    os_data_y= pd.DataFrame(data=os_data_y,columns=['y'])
-    return os_data_X, os_data_y
-"""
-Whether we had to under- or oversample our data is based on trial-and-error. The undersampling proved to work better for our data. After this the zeros and ones are 50/50 divided.
-"""
 """
 Using one-hot encoding the categorical attributes are converted in order to be able to use them in the machine learning algorithm. 
-Normalising is done in the model itself, and therefore not in the preprocessing. The data is split into 80% training data and 20% test data. 
-
-Second: Designing a policy for giving or denying credit to individuals 
-The choice for giving or denying credit to individuals is based on their probability for being credit-worthy. Given this probability, and taking into account the length of the loan, we can calculate the expected utility of giving a loan, using the formula E(U) = ((m(1-r)n-1)*p)-m(1-p)
+Normalising is done in the models, and therefore not in the preprocessing.
 """
+
+"""
+## Task 2.1.1:
+Designing a policy for giving or denying credit to individuals 
+The choice for giving or denying credit to individuals is based on their probability for being credit-worthy. 
+Given this probability, and taking into account the length of the loan, we can calculate the expected utility of giving a loan, using the formula 
+> E(U) = gain * p - amount * (1-p)
+
+Where amount is the loaned amount, and gain is the total amount of interest on the loan. p is the predicted probability of the loan being paid back.
+The interest is calculated using the following formula:
+>   amount * ((1 + interest_rate)**duration - 1)
+
+where duration is loan duration in months, and interest_rate is return per month in %/100.
+"""
+def calculate_gain(self, X):
+    return X['amount']*((1 + self.interest_rate)**(X['duration']) - 1)
+
 def expected_utility(self, X):
     p = self.predict_proba(self.parse_X(X))
     gain = self.calculate_gain(X)
@@ -60,60 +58,76 @@ def expected_utility(self, X):
                         -X['amount'].values*(1-p.flatten()))
     return expected_utilitiy
 """
+## Task 2.1.2:
 The probability is calculated using a neural network. 
 
+We assume that the labels represent the actual outcome of each loan, i.e. either loans are fully paid back or defaulted. 
+We also assume the labeling process is accurate, i.e there is no noise in the labeling process.
+
+We've chosen to implement three different models so we can compare them. The models are
+kNN, random forest and a fully connected neural network.
+
+### kNN:
+A kNN classifier with k=15 is used, pipelined with a standardscaler which subtracts the mean and scales input features to unit variance.
+The fit() function learns the means and standard deviations of each feature for the standardscaler, and then fits the kNN function to the training set.
+predict_proba() uses the in-build function in kNN from scikit learn.
+
+### Random forest:
+Random forest does not scale the data. We use n=130 classifiers.
+predict_proba() uses the in-build function in random forest from scikit learn.
+
+### Neural network:
 fit():
 As a first layer for the model we use batch normalization. This centers and normalizes the input values. 
-The main model is a simple fully connected artificial neural network with layer sizes 16 and 8, and elu activations.
-We use L2 regularization. 
-The final layer consists of a single neuron with a sigmoid activation. 
+The main model is a simple fully connected artificial neural network with elu activations.
+We use L2 regularization.
+The final layer consists of a single neuron with a sigmoid activation.
 The network is trained using binary cross-entropy loss.
 
-The model is trained using a batch size of 32 and 10 epochs of training with the Adam optimizer.
+We do a cross-validation (on the training data only) grid search over these parameters:
 """
-def build_network(self, X, y):
-    model = Sequential()
-    model.add(BatchNormalization())
-    for layer_size in self.layer_sizes:
-        model.add(Dense(layer_size, 
-                        activation='elu',
-                        kernel_regularizer=regularizers.l2(0.001)))
-    model.add(Dense(1, activation='sigmoid'))
-    model.compile(loss='binary_crossentropy',
-                    optimizer=self.optimizer,
-                    metrics=['accuracy'])
-    return model
-
 def fit(self, X, y):
-    y = self.parse_y(y.values.reshape(-1,1))
-    X = self.parse_X(X)
-    os_data_X, os_data_y = underSample(X,y)
-    self.model = self.build_network(os_data_X, os_data_y)
-    self.model.fit(os_data_X, 
-                    os_data_y, 
-                    epochs = 10, 
-                    batch_size=32, 
-                    validation_split=0.05)
+    param_grid = {'layer_sizes': [[32, 16], [64, 16], [64,32,16,8]], 
+    'batch_size': [8],
+    'epochs': [3],
+    'interest_rate': [self.interest_rate],
+    'optimizer': ['Adam'],
+    'loss': ['binary_crossentropy'],
+    'alpha': [1, 0.1, 0.01, 0.001, 0.0001]}
+    self.model = GridSearchCV(NeuralBanker(), param_grid, cv=5, n_jobs=6)
+    self.model.fit(X, y)
 """
+The scoring function for the grid search is the utility on the holdout set of the cross-validation.
+
+The selected model is trained using a batch size of 8 and 3 epochs of training with the Adam optimizer. layer_sizes is [64, 16], and
+the l2 regularization alpha parameter is 0.01.
+
 predict_proba():
 This function merely outputs the result of running the trained network forward.
 """
-def predict_proba(self, X):
-    return self.model.predict(X)
-
 """
-TODO: Add confusion matrix of the neural network
-"""
-
-"""
-Now we have a model that is well trained and working. So we will be able to combine it with our policy for giving credit.
-We will retrieve the result of the function expected_utility(X). If the result is greater than 0, that is to say if we can make money with this loan, the action will take the value 1. If the value returned is 0, the loan must not be granted. Since we made a change of value at the beginning, we change the 0 to 2.
+## Task 2.1.3
+Now we have models that are well trained and working. So we will be able to combine it with our policy for giving credit.
+We will retrieve the result of the function expected_utility(X). If the result is greater than 0, that is to say if we can make money with this loan, the action will take the value 1.
+If the value returned is 0 or negative, the loan must not be granted. Since we made a change of value at the beginning, we change the 0 to 2.
 """
 def get_best_action(self, X):
     actions = (self.expected_utility(X) > 0).astype(int).flatten()
     actions[np.where(actions == 0)] = 2
     return actions
 """
-A 100-way cross validation of NeuralBanker gave the result (38.45, 1229.55),
-a big improvement compared to RandomBankers (-4960.33, 7593.33)
+## Task 2.1.4
+Running all models through the TestLending procedure produced the following results:
+
+Average over 5 runs with 0.5% interest each month:
+>RandomBanker: -79560\
+>kNNbanker: 1591\
+>RandomForestClassifierBanker: 8837\
+>NeuralBankerGridSearch: 4816
+
+Average over 5 runs with 5% interest each month:
+>RandomBanker: 841195\
+>kNNbanker: 1256564\
+>RandomForestClassifierBanker: 1034688\
+>NeuralBankerGridSearch: 1102298
 """

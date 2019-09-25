@@ -10,7 +10,7 @@ from sklearn.neighbors import KNeighborsClassifier
 class RandomForestClassifierBanker(BankerBase):
     model = None
 
-    def set_interest_rate(self, interest_rate):
+    def __init__(self, interest_rate):
         self.interest_rate = interest_rate
 
     def parse_y(self, y):
@@ -26,8 +26,7 @@ class RandomForestClassifierBanker(BankerBase):
 
     def get_proba(self, X):
         ##print("proba")
-        ##print(self.model.predict_proba(np.array(X).reshape(1,-1))[0][1])
-        return self.model.predict_proba(np.array(X).reshape(1,-1))[0][1]
+        return self.model.predict_proba(np.array(X).reshape(1,-1))[:,1]
 
     def expected_utility(self, X):
         p = self.get_proba(self.parse_X(X))
