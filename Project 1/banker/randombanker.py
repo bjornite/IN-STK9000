@@ -37,13 +37,13 @@ class RandomBanker(BankerBase):
 
     def get_best_action(self, X):
         return choice((1, 2))
-    
+
 class NeuralBanker(BankerBase):
-    
+
     def __init__(self, interest_rate = 0.05, layer_sizes=[16,8],
                 batch_size=32,
                 epochs=10,
-                optimizer="Adam", 
+                optimizer="Adam",
                 loss="binary_crossentropy",
                 alpha = 0.001):
         self.interest_rate = interest_rate
@@ -56,7 +56,7 @@ class NeuralBanker(BankerBase):
 
     def get_params(self, deep=True):
         return {k: v for k, v in self.__dict__.items() if not callable(v)}
-    
+
     def set_params(self, **parameters):
         for parameter, value in parameters.items():
             setattr(self, parameter, value)
@@ -69,7 +69,7 @@ class NeuralBanker(BankerBase):
     def parse_X(self, X):
         #parsed_X = X.drop(["amount", "duration"], axis=1)
         return X.values.reshape(1, -1)
-    
+
     def get_best_action(self, X):
         actions = (self.expected_utility(X) > 0).astype(int).flatten()
         actions[np.where(actions == 0)] = 2
@@ -80,7 +80,7 @@ class NeuralBanker(BankerBase):
         gain = self.calculate_gain(X)
         expected_utilitiy = gain*p.flatten()-X['amount']*(1-p.flatten())
         return expected_utilitiy
-    
+
     def calculate_gain(self, X):
         return X['amount']*((1 + self.interest_rate)**(X['duration']) - 1)
 
@@ -112,7 +112,7 @@ class NeuralBanker(BankerBase):
                 else:
                     utility += amount*(pow(1 + self.interest_rate, duration) - 1)
         return utility
-    
+
     def get_proba(self, X):
         return self.model.predict(X)
 
@@ -125,13 +125,16 @@ class NeuralBanker(BankerBase):
         self.model = self.build_network(X, y)
         self.model.fit(X, y, epochs=self.epochs, batch_size=self.batch_size, verbose=0)
 
+    def predict(self, Xtest):
+        return self.model.predict(Xtest)
+
 class NeuralBankerGridSearch(BankerBase):
-    
+
     def __init__(self, interest_rate):
         self.interest_rate = interest_rate
 
     def fit(self, X, y):
-        param_grid = {'layer_sizes': [[32, 16], [64, 16], [64,32,16,8]], 
+        param_grid = {'layer_sizes': [[32, 16], [64, 16], [64,32,16,8]],
         'batch_size': [8],
         'epochs': [3],
         'interest_rate': [self.interest_rate],
@@ -160,9 +163,12 @@ class NeuralBankerGridSearch(BankerBase):
         gain = self.calculate_gain(X)
         expected_utilitiy = gain*p.flatten()-X['amount']*(1-p.flatten())
         return expected_utilitiy
-    
+
     def calculate_gain(self, X):
         return X['amount']*((1 + self.interest_rate)**(X['duration']) - 1)
+
+    def predict(self, Xtest):
+        return self.model.predict(Xtest)
 
 if __name__ == '__main__':
     run()

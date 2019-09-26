@@ -14,9 +14,9 @@ class RandomForestClassifierBanker(BankerBase):
         self.interest_rate = interest_rate
 
     def parse_y(self, y):
-        y[np.where(y == 2)] = 0 
+        y[np.where(y == 2)] = 0
         return y
-    
+
     def parse_X(self, X):
         return X
 
@@ -32,23 +32,23 @@ class RandomForestClassifierBanker(BankerBase):
         p = self.get_proba(self.parse_X(X))
         gain = self.calculate_gain(X)
         ##print("Gain")
-        ##print(gain)
+        #print(gain)
         ##print("Gain x p")
         ##print(gain*p)
         ##print("perte seche")
         ##print(X['amount'])
         ##print("argent a perdre")
         ##print(X['amount']*(1-p.flatten()))
-        expected_utilitiy = gain*p.flatten()-X['amount']*(1-p.flatten())
+        expected_utilitiy = (gain*p.flatten())-(X['amount']*(1-p.flatten()))
         ##print("expected_utilitiy")
-        ##print(expected_utilitiy)
+        #print(expected_utilitiy)
         return expected_utilitiy
-    
+
     def calculate_gain(self, X):
         ##print("calculate_gain")
         ##print(X['amount']*((1 + self.interest_rate)**(X['duration']) - 1))
         return X['amount']*((1 + self.interest_rate)**(X['duration']) - 1)
-        
+
     def fit(self, X, y):
         y = self.parse_y(y.values.reshape(-1,1).ravel())
         X = self.parse_X(X)

@@ -53,6 +53,9 @@ class kNNbanker(BankerBase):
         actions = (self.expected_utility(X) > 0).astype(int).flatten()
         actions[np.where(actions == 0)] = 2
         return actions
+        
+    def predict(self,Xtest):
+        return self.model.predict(Xtest)
 
 if __name__ == '__main__':
     run()

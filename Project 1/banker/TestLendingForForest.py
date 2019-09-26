@@ -98,7 +98,3 @@ ax.set_yticklabels([''] + labels)
 plt.xlabel('Predicted')
 plt.ylabel('Expected')
 plt.show()
-
-
-
-

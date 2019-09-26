@@ -1,4 +1,6 @@
 import pandas
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import confusion_matrix
 
 ## Set up for dataset
 features = ['checking account balance', 'duration', 'credit history',
@@ -49,13 +51,13 @@ from kNNbanker import kNNbanker
 
 interest_rate = 0.005
 decision_makers = []
-decision_makers.append(RandomBanker(interest_rate))
-decision_makers.append(kNNbanker(interest_rate))
-decision_makers.append(RandomForestClassifierBanker(interest_rate))
+#decision_makers.append(RandomBanker(interest_rate))
+#decision_makers.append(kNNbanker(interest_rate))
+#decision_makers.append(RandomForestClassifierBanker(interest_rate))
 decision_makers.append(NeuralBankerGridSearch(interest_rate))
 ### Do a number of preliminary tests by splitting the data in parts
 from sklearn.model_selection import train_test_split
-n_tests = 5
+n_tests = 1
 log = []
 for decision_maker in decision_makers:
     utility = 0
@@ -69,3 +71,29 @@ for decision_maker in decision_makers:
 
 for l in log:
     print(l)
+
+
+ypred = decision_maker.predict(X_test)
+print("Accuracy score")
+print(accuracy_score(y_test, ypred))
+
+#Confusion matrix
+
+y_test = list(y_test)
+for i in range(0, len(y_test)):
+    if y_test[i] == 2:
+        y_test[i] = 0
+conf_mat = confusion_matrix(y_true=list(y_test), y_pred=list(ypred))
+print('Confusion matrix:\n', conf_mat)
+labels = ['Class 0', 'Class 1']
+"""
+fig = plt.figure()
+ax = fig.add_subplot(111)
+cax = ax.matshow(conf_mat, cmap=plt.cm.Blues)
+fig.colorbar(cax)
+ax.set_xticklabels([''] + labels)
+ax.set_yticklabels([''] + labels)
+plt.xlabel('Predicted')
+plt.ylabel('Expected')
+plt.show()
+"""
