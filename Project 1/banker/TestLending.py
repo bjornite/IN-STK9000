@@ -1,6 +1,9 @@
 import pandas
+import numpy as np
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
+from sklearn import metrics
+import seaborn as sns
 
 ## Set up for dataset
 features = ['checking account balance', 'duration', 'credit history',
@@ -101,8 +104,8 @@ interest_rate = 0.005
 decision_makers = []
 #decision_makers.append(RandomBanker(interest_rate))
 #decision_makers.append(kNNbanker(interest_rate))
-#decision_makers.append(RandomForestClassifierBanker(interest_rate))
-decision_makers.append(NeuralBankerGridSearch(interest_rate))
+decision_makers.append(RandomForestClassifierBanker(interest_rate))
+#decision_makers.append(NeuralBankerGridSearch(interest_rate))
 ### Do a number of preliminary tests by splitting the data in parts
 from sklearn.model_selection import train_test_split
 n_tests = 1
@@ -122,17 +125,19 @@ for l in log:
 
 
 ypred = decision_maker.predict(X_test)
+print(ypred)
+
 print("Accuracy score")
 print(accuracy_score(y_test, ypred))
 
-#Confusion matrix
 
+#Confusion matrix
 y_test = list(y_test)
 for i in range(0, len(y_test)):
     if y_test[i] == 2:
         y_test[i] = 0
-conf_mat = confusion_matrix(y_true=list(y_test), y_pred=list(ypred))
-print('Confusion matrix:\n', conf_mat)
+confusion = confusion_matrix(y_true=list(y_test), y_pred=list(ypred))
+print('Confusion matrix:\n', confusion)
 labels = ['Class 0', 'Class 1']
 """
 fig = plt.figure()
@@ -143,5 +148,59 @@ ax.set_xticklabels([''] + labels)
 ax.set_yticklabels([''] + labels)
 plt.xlabel('Predicted')
 plt.ylabel('Expected')
+plt.show()
+"""
+TP = confusion[1, 1]
+TN = confusion[0, 0]
+FP = confusion[0, 1]
+FN = confusion[1, 0]
+
+# Metrics from classification matrix
+print('Classification accuracy:', (TP + TN) / float(TP + TN + FP + FN))  #should be the same as the accuracy score
+print('Classification error:', (FP + FN) / float(TP + TN + FP + FN))
+print('Sensitivity:', (TP / float(FN + TP)))
+print('Specificity:', (TN / (TN + FP)))
+print('False positive rate:', (FP / float(TN + FP)))
+print('Precision:', TP / float(TP + FP))
+
+# ROC curve
+
+y_pred_prob = decision_maker.predict_proba(X_test)[:,1] #probabilities for class 1
+print(y_pred_prob)
+
+fpr, tpr, thresholds = metrics.roc_curve(y_test, y_pred_prob)
+
+plt.plot(fpr, tpr)
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.0])
+plt.rcParams['font.size'] = 12
+plt.title('ROC curve for credit loan classifier')
+plt.xlabel('False Positive Rate (1 - Specificity)')
+plt.ylabel('True Positive Rate (Sensitivity)')
+plt.grid(True)
+plt.show()
+
+# define a function that accepts a threshold and prints sensitivity and specificity
+def evaluate_threshold(threshold):
+    print('Sensitivity:', tpr[thresholds > threshold][-1])
+    print('Specificity:', 1 - fpr[thresholds > threshold][-1])
+
+# AUC
+print(metrics.roc_auc_score(y_test, y_pred_prob))
+
+
+
+"""
+# Plot to show feature importance
+feature_imp = decision_maker.get_importances(X_train)
+print(feature_imp)
+
+labels, ys = zip(*feature_imp)
+xs = np.arange(len(labels))
+width = 0.5
+plt.bar(xs, ys, width, align='center')
+plt.xticks(xs, labels, rotation=90)
+plt.yticks(ys)
+plt.title('Feature importance')
 plt.show()
 """

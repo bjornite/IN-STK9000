@@ -66,5 +66,13 @@ class RandomForestClassifierBanker(BankerBase):
     def predict(self,Xtest):
         return self.model.predict(Xtest)
 
+    def predict_proba(self, Xtest):
+        return self.model.predict_proba(Xtest)
+
+    def get_importances(self, X):
+        importance = list(zip(X, self.model.feature_importances_))
+        return importance
+        print(importance)
+
 if __name__ == '__main__':
     run()

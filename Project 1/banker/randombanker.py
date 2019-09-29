@@ -6,6 +6,7 @@ import os
 stderr = sys.stderr
 sys.stderr = open(os.devnull, 'w')
 import keras
+from keras.models import Model
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, BatchNormalization
 from keras.optimizers import RMSprop
@@ -128,6 +129,10 @@ class NeuralBanker(BankerBase):
     def predict(self, Xtest):
         return self.model.predict(Xtest)
 
+    def accuracyscore(self, Xtest, y_test):
+        return self.model.evaluate(Xtest, y_test)
+        print(accuracy)
+
 class NeuralBankerGridSearch(BankerBase):
 
     def __init__(self, interest_rate):
@@ -167,8 +172,8 @@ class NeuralBankerGridSearch(BankerBase):
     def calculate_gain(self, X):
         return X['amount']*((1 + self.interest_rate)**(X['duration']) - 1)
 
-    def predict(self, Xtest):
-        return self.model.predict(Xtest)
+    def predict_classes(self, Xtest):
+        return self.model.predict_classes(Xtest)
 
 if __name__ == '__main__':
     run()
