@@ -139,6 +139,7 @@ for i in range(0, len(y_test)):
 confusion = confusion_matrix(y_true=list(y_test), y_pred=list(ypred))
 print('Confusion matrix (p_threshold = 0.5):\n', confusion)
 labels = ['Class 0', 'Class 1']
+
 """
 fig = plt.figure()
 ax = fig.add_subplot(111)
@@ -150,6 +151,7 @@ plt.xlabel('Predicted')
 plt.ylabel('Expected')
 plt.show()
 """
+
 TP = confusion[1, 1]
 TN = confusion[0, 0]
 FP = confusion[0, 1]
@@ -208,7 +210,7 @@ plt.title('ROC curve for credit loan classifier')
 plt.xlabel('False Positive Rate (1 - Specificity)')
 plt.ylabel('True Positive Rate (Sensitivity)')
 plt.grid(True)
-plt.show()
+plt.savefig('../Images/ROC_curve.png')
 
 
 # define a function that accepts a threshold and prints sensitivity and specificity
@@ -221,10 +223,10 @@ print('ROC/AUC score:', metrics.roc_auc_score(y_test, y_pred_prob))
 
 
 
-"""
+
 # Plot to show feature importance
 feature_imp = decision_maker.get_importances(X_train)
-print(feature_imp)
+#print(feature_imp)
 
 labels, ys = zip(*feature_imp)
 xs = np.arange(len(labels))
@@ -234,4 +236,4 @@ plt.xticks(xs, labels, rotation=90)
 plt.yticks(ys)
 plt.title('Feature importance')
 plt.show()
-"""
+#plt.savefig('../Images/feature_importance.png')
