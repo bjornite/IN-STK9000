@@ -137,7 +137,7 @@ for i in range(0, len(y_test)):
     if y_test[i] == 2:
         y_test[i] = 0
 confusion = confusion_matrix(y_true=list(y_test), y_pred=list(ypred))
-print('Confusion matrix:\n', confusion)
+print('Confusion matrix (p_threshold = 0.5):\n', confusion)
 labels = ['Class 0', 'Class 1']
 """
 fig = plt.figure()
@@ -166,8 +166,38 @@ print('Precision:', TP / float(TP + FP))
 # ROC curve
 
 y_pred_prob = decision_maker.predict_proba(X_test)[:,1] #probabilities for class 1
-print(y_pred_prob)
+print(y_pred_prob.shape)
 
+# histogram of predicted probabilities
+"""
+plt.hist(y_pred_prob, bins=8)
+plt.xlim(0,1)
+plt.title('Histogram of predicted probabilities')
+plt.xlabel('Predicted probability of repaid')
+plt.ylabel('Frequency')
+plt.show()
+"""
+
+# predict diabetes if the predicted probability is greater than 0.7
+from sklearn.preprocessing import binarize
+# it will return 1 for all values above 0.3 and 0 otherwise
+# results are 2D so we slice out the first column
+y_pred_class = binarize(y_pred_prob.reshape(1,-1), 0.7)[0]
+print(y_pred_class.shape)
+confusion_new = confusion_matrix(y_true=list(y_test), y_pred = y_pred_class)
+print('Confusion matrix (p_threshold = 0.5):\n', confusion_new)
+
+TP_new = confusion_new[1, 1]
+TN_new = confusion_new[0, 0]
+FP_new = confusion_new[0, 1]
+FN_new = confusion_new[1, 0]
+
+print('Specificity_new:', (TN_new / (TN_new + FP_new)))
+print('Precision_new:', TP_new / float(TP_new + FP_new))
+print('Sensitivity_new:', (TP_new / float(FN_new + TP_new)))
+
+
+# ROC curve
 fpr, tpr, thresholds = metrics.roc_curve(y_test, y_pred_prob)
 
 plt.plot(fpr, tpr)
@@ -180,13 +210,14 @@ plt.ylabel('True Positive Rate (Sensitivity)')
 plt.grid(True)
 plt.show()
 
+
 # define a function that accepts a threshold and prints sensitivity and specificity
 def evaluate_threshold(threshold):
     print('Sensitivity:', tpr[thresholds > threshold][-1])
     print('Specificity:', 1 - fpr[thresholds > threshold][-1])
 
 # AUC
-print(metrics.roc_auc_score(y_test, y_pred_prob))
+print('ROC/AUC score:', metrics.roc_auc_score(y_test, y_pred_prob))
 
 
 
