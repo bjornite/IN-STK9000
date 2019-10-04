@@ -61,7 +61,7 @@ def expected_utility(self, X):
 ## Task 2.1.2:
 The probability is calculated using a neural network. 
 
-We assume that the labels represent the actual outcome of each loan, i.e. either loans are fully paid back or defaulted. 
+We assume that the labels represent the actual outcome of each loan, i.e. either loans are fully paid back or defaulted.
 We also assume the labeling process is accurate, i.e there is no noise in the labeling process.
 
 We've chosen to implement three different models so we can compare them. The models are
