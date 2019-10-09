@@ -38,6 +38,9 @@ class RandomBanker(BankerBase):
 
     def get_best_action(self, X):
         return choice((1, 2))
+    
+    def predict(self, X):
+        return [choice((1, 0)) for x in X.iterrows()]
 
 class NeuralBanker(BankerBase):
 
@@ -168,6 +171,10 @@ class NeuralBankerGridSearch(BankerBase):
         gain = self.calculate_gain(X)
         expected_utilitiy = gain*p.flatten()-X['amount']*(1-p.flatten())
         return expected_utilitiy
+
+    def predict(self, Xtest):
+        actions = (self.model.predict(Xtest) > 0.5).astype(int).flatten()
+        return actions
 
     def calculate_gain(self, X):
         return X['amount']*((1 + self.interest_rate)**(X['duration']) - 1)
