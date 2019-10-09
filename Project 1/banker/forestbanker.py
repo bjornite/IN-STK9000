@@ -1,4 +1,4 @@
-from banker import BankerBase, run
+from banker import BankerBase , run
 from random import choice
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.utils import class_weight
