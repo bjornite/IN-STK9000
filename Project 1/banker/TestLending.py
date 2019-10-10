@@ -48,13 +48,13 @@ def test_decision_maker(X_test, y_test, interest_rate, decision_maker):
 
 interest_rate = 0.05
 
-import forestbanker
-decision_maker = forestbanker.RandomForestClassifierBanker()
+import forestbanker_jolynde
+decision_maker = forestbanker_jolynde.RandomForestClassifier()
 
 
 ### Do a number of preliminary tests by splitting the data in parts
 from sklearn.model_selection import train_test_split
-n_tests = 100
+n_tests = 10
 utility = 0
 investment_return = 0
 for iter in range(n_tests):

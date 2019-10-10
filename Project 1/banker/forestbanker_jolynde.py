@@ -5,14 +5,16 @@ from sklearn.utils import class_weight
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.neighbors import KNeighborsClassifier
 
-class RandomForestClassifierBanker(BankerBase):
+from sklearn.model_selection import RandomizedSearchCV
+
+
+class RandomForestClassifier(BankerBase):
     model = None
 
     def __init__(self):
         self.interest_rate = None
-    
+
     def set_interest_rate(self, interest_rate):
         self.interest_rate = interest_rate
 
@@ -25,6 +27,9 @@ class RandomForestClassifierBanker(BankerBase):
 
     def build_forest(self, X, y):
         #model = RandomForestClassifier(n_estimators=130)
+
+        # we optimize the model on the dataset, but it does so in the training so it will do this for every new dataset it
+        # is trained on (https://towardsdatascience.com/an-implementation-and-explanation-of-the-random-forest-in-python-77bf308a9b76)
         param_grid = {
             'n_estimators': np.linspace(10, 200).astype(int),
             'max_depth': [None] + list(np.linspace(3, 20).astype(int)),
@@ -35,15 +40,13 @@ class RandomForestClassifierBanker(BankerBase):
         }
 
         # Estimator for use in random search
-        estimator = RandomForestClassifier(random_state = RSEED)
+        estimator = RandomForestClassifier()
 
         # Create the random search model
         model = RandomizedSearchCV(estimator, param_grid, n_jobs = -1,
                                 scoring = 'roc_auc', cv = 3,
-                                n_iter = 10, verbose = 1, random_state=RSEED)
-
-        # Fit
-        rs.fit(train, train_labels)
+                                n_iter = 10, verbose = 1)
+        #print(model.best_params_)
         return model
 
     def get_proba(self, X):
@@ -63,6 +66,12 @@ class RandomForestClassifierBanker(BankerBase):
         X = self.parse_X(X)
         self.model = self.build_forest(X, y)
         self.model.fit(X,y)
+        self.model.best_estimator_
+        print(self.model.best_estimator_)
+
+    def get_best_params(self):
+        print(self.model.best_params_)
+        return self.model.best_params_
 
     def get_best_action(self, X):
         actions = (self.expected_utility(X) > 0).astype(int).flatten()
@@ -77,8 +86,8 @@ class RandomForestClassifierBanker(BankerBase):
 
     def get_importances(self, X):
         importance = list(zip(X, self.model.feature_importances_))
-        return importance
         print(importance)
+        return importance
 
 if __name__ == '__main__':
     run()
