@@ -46,11 +46,11 @@ def test_decision_maker(X_test, y_test, interest_rate, decision_maker):
 #import random_banker # this is a random banker
 #decision_maker = random_banker.RandomBanker()
 
+interest_rate = 0.05
 
 import forestbanker
-decision_maker = forestbanker.RandomForestClassifierBanker(interest_rate)
+decision_maker = forestbanker.RandomForestClassifierBanker()
 
-interest_rate = 0.05
 
 ### Do a number of preliminary tests by splitting the data in parts
 from sklearn.model_selection import train_test_split
