@@ -12,7 +12,7 @@ class RandomForestClassifierBanker(BankerBase):
 
     def __init__(self):
         self.interest_rate = None
-    
+
     def set_interest_rate(self, interest_rate):
         self.interest_rate = interest_rate
 
@@ -24,26 +24,7 @@ class RandomForestClassifierBanker(BankerBase):
         return X
 
     def build_forest(self, X, y):
-        #model = RandomForestClassifier(n_estimators=130)
-        param_grid = {
-            'n_estimators': np.linspace(10, 200).astype(int),
-            'max_depth': [None] + list(np.linspace(3, 20).astype(int)),
-            'max_features': ['auto', 'sqrt', None] + list(np.arange(0.5, 1, 0.1)),
-            'max_leaf_nodes': [None] + list(np.linspace(10, 50, 500).astype(int)),
-            'min_samples_split': [2, 5, 10],
-            'bootstrap': [True, False]
-        }
-
-        # Estimator for use in random search
-        estimator = RandomForestClassifier(random_state = RSEED)
-
-        # Create the random search model
-        model = RandomizedSearchCV(estimator, param_grid, n_jobs = -1,
-                                scoring = 'roc_auc', cv = 3,
-                                n_iter = 10, verbose = 1, random_state=RSEED)
-
-        # Fit
-        rs.fit(train, train_labels)
+        model = RandomForestClassifier(n_estimators=130)
         return model
 
     def get_proba(self, X):
