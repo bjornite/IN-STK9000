@@ -5,12 +5,12 @@ from sklearn.utils import class_weight
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
 
 from sklearn.model_selection import RandomizedSearchCV
 
-
-class RandomForestClassifier(BankerBase):
-    #model = None
+class RandomForestClassifierBanker(BankerBase):
+    model = None
 
     def __init__(self, interest_rate):
         self.interest_rate = interest_rate
@@ -28,15 +28,13 @@ class RandomForestClassifier(BankerBase):
     def build_forest(self, X, y):
         #model = RandomForestClassifier(n_estimators=130)
 
-        # we optimize the model on the dataset, but it does so in the training so it will do this for every new dataset it
-        # is trained on (https://towardsdatascience.com/an-implementation-and-explanation-of-the-random-forest-in-python-77bf308a9b76)
         param_grid = {
             'n_estimators': np.linspace(10, 200).astype(int),
             'max_depth': [None] + list(np.linspace(3, 20).astype(int)),
             'max_features': ['auto', 'sqrt', None] + list(np.arange(0.5, 1, 0.1)),
             'max_leaf_nodes': [None] + list(np.linspace(10, 50, 500).astype(int)),
             'min_samples_split': [2, 5, 10],
-            'bootstrap': [True, False],
+            'bootstrap': [True, False]
         }
 
         # Estimator for use in random search
@@ -46,11 +44,9 @@ class RandomForestClassifier(BankerBase):
         model = RandomizedSearchCV(estimator, param_grid, n_jobs = -1,
                                 scoring = 'roc_auc', cv = 3,
                                 n_iter = 10, verbose = 1)
-        #print(model.best_params_)
+
         return model
 
-    def get_proba(self, X):
-        return self.best_model.predict_proba(np.array(X).reshape(1,-1))[:,1]
 
     def expected_utility(self, X):
         p = self.get_proba(self.parse_X(X))
@@ -67,12 +63,10 @@ class RandomForestClassifier(BankerBase):
         self.model = self.build_forest(X, y)
         self.model.fit(X,y)
 
-    def best_model(self):       #take the best model
-        return self.model.best_estimator_
-
-    def get_best_params(self):
-        print(self.model.best_params_)
-        return self.model.best_params_
+    def get_proba(self, X):
+        best_model = self.model.best_estimator_
+        print(best_model)
+        return best_model.predict_proba(np.array(X).reshape(1,-1))[:,1]
 
     def get_best_action(self, X):
         actions = (self.expected_utility(X) > 0).astype(int).flatten()
@@ -87,8 +81,8 @@ class RandomForestClassifier(BankerBase):
 
     def get_importances(self, X):
         importance = list(zip(X, self.model.feature_importances_))
-        print(importance)
         return importance
+        print(importance)
 
 if __name__ == '__main__':
     run()

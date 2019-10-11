@@ -7,6 +7,9 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 
+from sklearn.ensemble import BaggingClassifier
+
+
 class RandomForestClassifierBanker(BankerBase):
     model = None
 
@@ -24,7 +27,9 @@ class RandomForestClassifierBanker(BankerBase):
         return X
 
     def build_forest(self, X, y):
-        model = RandomForestClassifier(n_estimators=130)
+        base_cls = RandomForestClassifier()
+        model = BaggingClassifier(base_estimator = base_cls,
+                                    n_estimators = 130)
         return model
 
     def get_proba(self, X):
