@@ -10,11 +10,11 @@ from sklearn.neighbors import KNeighborsClassifier
 class RandomForestClassifierBanker(BankerBase):
     model = None
 
-    def __init__(self):
-        self.interest_rate = None
-
-    def set_interest_rate(self, interest_rate):
+    def __init__(self, interest_rate):
         self.interest_rate = interest_rate
+
+    #def set_interest_rate(self, interest_rate):
+        #self.interest_rate = interest_rate
 
     def parse_y(self, y):
         y[np.where(y == 2)] = 0

@@ -35,12 +35,16 @@ tf.logging.set_verbosity(tf.logging.ERROR)
 from randombanker import NeuralBankerGridSearch, RandomBanker
 from forestbanker import RandomForestClassifierBanker
 from kNNbanker import kNNbanker
+#from forestbanker_jolynde1 import RandomForestClassifier
+from forestbanker_jolynde import RandomForestClassifier
+
 
 interest_rate = 0.005
 decision_makers = []
 #decision_makers.append(RandomBanker(interest_rate))
 #decision_makers.append(kNNbanker(interest_rate))
 decision_makers.append(RandomForestClassifierBanker(interest_rate))
+#decision_makers.append(RandomForestClassifier())
 #decision_makers.append(NeuralBankerGridSearch(interest_rate))
 ### Do a number of preliminary tests by splitting the data in parts
 from sklearn.model_selection import train_test_split
@@ -96,7 +100,7 @@ for l in log2:
 #print('ROC/AUC score:', metrics.roc_auc_score(y_test, y_pred_prob))
 log3 = []
 for decision_maker in decision_makers:
-    y_pred_prob = decision_maker.predict_proba(X_test) #[:,1] #probabilities for class 1
+    y_pred_prob = decision_maker.predict_proba(X_test)[:,1] #probabilities for class 1
     AUC_score = metrics.roc_auc_score(y_test, y_pred_prob)
     log3.append("{}: {}".format(type(decision_maker), AUC_score))
 

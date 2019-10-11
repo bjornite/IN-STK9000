@@ -10,13 +10,13 @@ from sklearn.model_selection import RandomizedSearchCV
 
 
 class RandomForestClassifier(BankerBase):
-    model = None
+    #model = None
 
-    def __init__(self):
-        self.interest_rate = None
-
-    def set_interest_rate(self, interest_rate):
+    def __init__(self, interest_rate):
         self.interest_rate = interest_rate
+
+    #def set_interest_rate(self, interest_rate):
+        #self.interest_rate = interest_rate
 
     def parse_y(self, y):
         y[np.where(y == 2)] = 0
@@ -36,7 +36,7 @@ class RandomForestClassifier(BankerBase):
             'max_features': ['auto', 'sqrt', None] + list(np.arange(0.5, 1, 0.1)),
             'max_leaf_nodes': [None] + list(np.linspace(10, 50, 500).astype(int)),
             'min_samples_split': [2, 5, 10],
-            'bootstrap': [True, False]
+            'bootstrap': [True, False],
         }
 
         # Estimator for use in random search
@@ -50,7 +50,7 @@ class RandomForestClassifier(BankerBase):
         return model
 
     def get_proba(self, X):
-        return self.model.predict_proba(np.array(X).reshape(1,-1))[:,1]
+        return self.best_model.predict_proba(np.array(X).reshape(1,-1))[:,1]
 
     def expected_utility(self, X):
         p = self.get_proba(self.parse_X(X))
@@ -66,8 +66,9 @@ class RandomForestClassifier(BankerBase):
         X = self.parse_X(X)
         self.model = self.build_forest(X, y)
         self.model.fit(X,y)
-        self.model.best_estimator_
-        print(self.model.best_estimator_)
+
+    def best_model(self):       #take the best model
+        return self.model.best_estimator_
 
     def get_best_params(self):
         print(self.model.best_params_)

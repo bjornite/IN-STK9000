@@ -1,7 +1,7 @@
 import pandas
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
-from forestbanker import RandomForestClassifierBanker
+from forestbanker_jolynde import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
 
@@ -61,7 +61,7 @@ def test_decision_maker(X_test, y_test, interest_rate, decision_maker):
 #decision_maker = random_banker.RandomBanker()
 
 interest_rate = 0.005
-decision_maker = RandomForestClassifierBanker()
+decision_maker = RandomForestClassifier()
 
 ### Do a number of preliminary tests by splitting the data in parts
 
