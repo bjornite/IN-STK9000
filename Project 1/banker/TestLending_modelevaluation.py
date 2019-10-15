@@ -37,7 +37,8 @@ import tensorflow as tf
 tf.logging.set_verbosity(tf.logging.ERROR)
 
 #from randombanker import NeuralBankerGridSearch, RandomBanker
-from randombanker import NeuralBankerGridSearch
+#from randombanker import NeuralBankerGridSearch
+from randombanker_bagging import NeuralBanker
 from forestbanker import RandomForestClassifierBanker
 from kNNbanker import kNNbanker
 #from forestbanker_optimized import RandomForestClassifier
@@ -50,6 +51,7 @@ decision_makers.append(kNNbanker(interest_rate))
 decision_makers.append(RandomForestClassifierBanker(interest_rate))
 #decision_makers.append(RandomForestClassifier(interest_rate))
 #decision_makers.append(NeuralBankerGridSearch(interest_rate))
+decision_makers.append(NeuralBanker(interest_rate))
 ### Do a number of preliminary tests by splitting the data in parts
 from sklearn.model_selection import train_test_split
 
