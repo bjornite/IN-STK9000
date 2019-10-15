@@ -5,6 +5,8 @@ from sklearn.pipeline import make_pipeline
 import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn import metrics
+from sklearn.ensemble import BaggingClassifier
+
 
 class kNNbanker(BankerBase):
 
@@ -16,7 +18,10 @@ class kNNbanker(BankerBase):
 
     def kNN(self, X, y):
         scaler = StandardScaler()
-        knn = KNeighborsClassifier(n_neighbors = 15)
+        base_cls = KNeighborsClassifier(n_neighbors = 15)
+        knn = BaggingClassifier(base_estimator = base_cls,
+                                n_estimators = 100)
+
         model = make_pipeline(scaler, knn)
         return model
 
@@ -59,6 +64,7 @@ class kNNbanker(BankerBase):
 
     def predict(self,Xtest):
         return self.model.predict(Xtest)
+
 
 if __name__ == '__main__':
     run()

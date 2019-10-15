@@ -9,7 +9,7 @@ from sklearn.neighbors import KNeighborsClassifier
 
 from sklearn.model_selection import RandomizedSearchCV
 
-class RandomForestClassifierBanker(BankerBase):
+class RandomForestClassifier(BankerBase):
     model = None
 
     def __init__(self, interest_rate):
@@ -64,9 +64,11 @@ class RandomForestClassifierBanker(BankerBase):
         self.model.fit(X,y)
 
     def get_proba(self, X):
-        best_model = self.model.best_estimator_
-        print(best_model)
         return best_model.predict_proba(np.array(X).reshape(1,-1))[:,1]
+
+    def best_model(self):
+        print(best_model)
+        return self.model.best_estimator_
 
     def get_best_action(self, X):
         actions = (self.expected_utility(X) > 0).astype(int).flatten()
@@ -74,10 +76,11 @@ class RandomForestClassifierBanker(BankerBase):
         return actions
 
     def predict(self,Xtest):
-        return self.model.predict(Xtest)
+        return self.best_model.predict(Xtest)
 
-    def predict_proba(self, Xtest):
-        return self.model.predict_proba(Xtest)
+    #def predict_proba(self, Xtest):
+        #return self.model.predict_proba(Xtest)
+        #deze staat hierboven al als get_proba
 
     def get_importances(self, X):
         importance = list(zip(X, self.model.feature_importances_))

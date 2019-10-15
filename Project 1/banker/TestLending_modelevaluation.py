@@ -6,6 +6,10 @@ from sklearn import metrics
 import seaborn as sns
 from TestLendingFunctions import test_decision_maker, privacy_step, privacy_epsilon
 
+from sklearn.ensemble import BaggingClassifier
+from sklearn.model_selection import cross_val_score
+
+
 ## Set up for dataset
 features = ['checking account balance', 'duration', 'credit history',
             'purpose', 'amount', 'savings', 'employment', 'installment',
@@ -32,24 +36,24 @@ encoded_features = list(filter(lambda x: x != target, X.columns))
 import tensorflow as tf
 tf.logging.set_verbosity(tf.logging.ERROR)
 
-from randombanker import NeuralBankerGridSearch, RandomBanker
+#from randombanker import NeuralBankerGridSearch, RandomBanker
+from randombanker import NeuralBankerGridSearch
 from forestbanker import RandomForestClassifierBanker
 from kNNbanker import kNNbanker
-#from forestbanker_jolynde1 import RandomForestClassifier
-from forestbanker_jolynde import RandomForestClassifier
+#from forestbanker_optimized import RandomForestClassifier
 
 
 interest_rate = 0.005
 decision_makers = []
 #decision_makers.append(RandomBanker(interest_rate))
-#decision_makers.append(kNNbanker(interest_rate))
+decision_makers.append(kNNbanker(interest_rate))
 decision_makers.append(RandomForestClassifierBanker(interest_rate))
-#decision_makers.append(RandomForestClassifier())
+#decision_makers.append(RandomForestClassifier(interest_rate))
 #decision_makers.append(NeuralBankerGridSearch(interest_rate))
 ### Do a number of preliminary tests by splitting the data in parts
 from sklearn.model_selection import train_test_split
 
-n_tests = 1
+n_tests = 10
 log = []
 for decision_maker in decision_makers:
     utility_ntests = []
@@ -67,12 +71,16 @@ for decision_maker in decision_makers:
 for l in log:
     print("Utility", l)
 
+
 #Accuracy score
 log1 = []
 for decision_maker in decision_makers:
     ypred = decision_maker.predict(X_test)
     accuracy = accuracy_score(y_test, ypred)
-    log1.append("{}: {}".format(type(decision_maker), accuracy))
+
+    scores = cross_val_score(decision_maker.model, X[encoded_features], X[target], cv = 10)
+
+    log1.append("{}: {}, {}".format(type(decision_maker), scores.mean(), scores.std()*2))
     #print("Accuracy score:", accuracy_score(y_test, ypred))
 
 for l in log1:
@@ -96,7 +104,7 @@ for l in log2:
     print("Confusion", l)
 
 
-
+"""
 #print('ROC/AUC score:', metrics.roc_auc_score(y_test, y_pred_prob))
 log3 = []
 for decision_maker in decision_makers:
@@ -108,6 +116,20 @@ for decision_maker in decision_makers:
     #labels = ['Class 0', 'Class 1']
 for l in log3:
     print("AUC-score", l)
+"""
+
+N_test, _ = X_test.shape
+p_max = np.zeros(N_test)
+
+for decision_maker in decision_makers:
+    for t in range(N_test):
+        p_max[t] = max(decision_maker.predict_proba(X_test)[t])
+    sns.distplot(p_max)
+    plt.show()
+
+
+
+
 
 """
 fig = plt.figure()
