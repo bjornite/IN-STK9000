@@ -47,9 +47,11 @@ def test_decision_maker(X_test, y_test, interest_rate, decision_maker):
 #decision_maker = random_banker.RandomBanker()
 
 interest_rate = 0.05
-
-import forestbanker
-decision_maker = forestbanker.RandomForestClassifierBanker()
+print('test1')
+import final_randombanker
+print('test2')
+decision_maker = final_randombanker.RandomForestClassifier()
+print('test3')
 
 
 ### Do a number of preliminary tests by splitting the data in parts
