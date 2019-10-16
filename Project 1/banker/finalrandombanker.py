@@ -4,8 +4,19 @@ from banker import BankerBase, run
 from random import choice
 import sys
 import os
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.utils import class_weight
+from sklearn.model_selection import GridSearchCV
+import numpy as np
+import pandas as pd
+
+"""
 stderr = sys.stderr
 sys.stderr = open(os.devnull, 'w')
+
+# For NeuralBanker
+import tensorflow as tf
+
 import keras
 from keras.models import Model
 from keras.models import Sequential
@@ -13,12 +24,16 @@ from keras.layers import Dense, Dropout, BatchNormalization
 from keras.optimizers import RMSprop
 from keras import regularizers
 sys.stderr = stderr
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.utils import class_weight
-from sklearn.model_selection import GridSearchCV
-import numpy as np
-import pandas as pd
-import tensorflow as tf
+"""
+
+# For kNNbanker
+from sklearn import metrics
+from sklearn.pipeline import make_pipeline
+
+# For RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import BaggingClassifier
 
 class RandomBanker(BankerBase):
     """Example Banker implementation. To implement your own, you need to take
@@ -31,8 +46,12 @@ class RandomBanker(BankerBase):
        constructor argument (to be sklearn compliant).
        """
 
-    def __init__(self, interest_rate):
+    def __init__(self):
+        self.interest_rate = None
+
+    def set_interest_rate(self, interest_rate):
         self.interest_rate = interest_rate
+
 
     def fit(self, X, y):
         pass
@@ -51,13 +70,16 @@ class NeuralBanker(BankerBase):
                 optimizer="Adam",
                 loss="binary_crossentropy",
                 alpha = 0.001):
-        self.interest_rate = interest_rate
+        self.interest_rate = None
         self.layer_sizes = layer_sizes
         self.batch_size = batch_size
         self.epochs = epochs
         self.optimizer = optimizer
         self.loss = loss
         self.alpha = alpha
+
+    def set_interest_rate(self, interest_rate):
+        self.interest_rate = interest_rate
 
     def get_params(self, deep=True):
         return {k: v for k, v in self.__dict__.items() if not callable(v)}
@@ -188,7 +210,10 @@ class kNNbanker(BankerBase):
     model = None
     norm = None
 
-    def __init__(self, interest_rate):
+    def __init__(self):
+        self.interest_rate = None
+
+    def set_interest_rate(self, interest_rate):
         self.interest_rate = interest_rate
 
     def kNN(self, X, y):
@@ -240,14 +265,15 @@ class kNNbanker(BankerBase):
     def predict(self,Xtest):
         return self.model.predict(Xtest)
 
-class RandomForestClassifier(BankerBase):
+
+class RandomForestClassifierBanker(BankerBase):
     model = None
 
-    def __init__(self, interest_rate):
-        self.interest_rate = interest_rate
+    def __init__(self):
+        self.interest_rate = None
 
-    #def set_interest_rate(self, interest_rate):
-        #self.interest_rate = interest_rate
+    def set_interest_rate(self, interest_rate):
+        self.interest_rate = interest_rate
 
     def parse_y(self, y):
         y[np.where(y == 2)] = 0
@@ -257,27 +283,13 @@ class RandomForestClassifier(BankerBase):
         return X
 
     def build_forest(self, X, y):
-        #model = RandomForestClassifier(n_estimators=130)
-
-        param_grid = {
-            'n_estimators': np.linspace(10, 200).astype(int),
-            'max_depth': [None] + list(np.linspace(3, 20).astype(int)),
-            'max_features': ['auto', 'sqrt', None] + list(np.arange(0.5, 1, 0.1)),
-            'max_leaf_nodes': [None] + list(np.linspace(10, 50, 500).astype(int)),
-            'min_samples_split': [2, 5, 10],
-            'bootstrap': [True, False]
-        }
-
-        # Estimator for use in random search
-        estimator = RandomForestClassifier()
-
-        # Create the random search model
-        model = RandomizedSearchCV(estimator, param_grid, n_jobs = -1,
-                                scoring = 'roc_auc', cv = 3,
-                                n_iter = 10, verbose = 1)
-
+        base_cls = RandomForestClassifier()
+        model = BaggingClassifier(base_estimator = base_cls,
+                                    n_estimators = 130)
         return model
 
+    def get_proba(self, X):
+        return self.model.predict_proba(np.array(X).reshape(1,-1))[:,1]
 
     def expected_utility(self, X):
         p = self.get_proba(self.parse_X(X))
@@ -294,34 +306,29 @@ class RandomForestClassifier(BankerBase):
         self.model = self.build_forest(X, y)
         self.model.fit(X,y)
 
-    def get_proba(self, X):
-        return best_model.predict_proba(np.array(X).reshape(1,-1))[:,1]
-
-    def best_model(self):
-        print(best_model)
-        return self.model.best_estimator_
-
     def get_best_action(self, X):
         actions = (self.expected_utility(X) > 0).astype(int).flatten()
         actions[np.where(actions == 0)] = 2
         return actions
 
     def predict(self,Xtest):
-        return self.best_model.predict(Xtest)
+        return self.model.predict(Xtest)
 
-    #def predict_proba(self, Xtest):
-        #return self.model.predict_proba(Xtest)
-        #deze staat hierboven al als get_proba
+    def predict_proba(self, Xtest):
+        return self.model.predict_proba(Xtest)
 
     def get_importances(self, X):
         importance = list(zip(X, self.model.feature_importances_))
         return importance
         print(importance)
-"""
+
+
+
+
 # This function take as parameters an array X_one_column with the corresponding column that we want to anonymize.
     # For instance X['age']. It wiil return the new array with interval of value and not numérical value.
 def privacy_step(X_one_column):
-    pandas.options.mode.chained_assignment = None # This avoid the warn beacause, this function will write into the original frame.
+    #pandas.options.mode.chained_assignment = None # This avoid the warn beacause, this function will write into the original frame.
     max = X_one_column.max()
     min = X_one_column.min()
     difference = max - min
@@ -362,7 +369,7 @@ def privacy_epsilon(X_one_column,epsilon):
 # The principe is to flip a coin and if it comes heads, respond truthfully. 
 # Otherwise, change the data randomly
 def privacy_step_coin(X_one_column,p):
-    pandas.options.mode.chained_assignment = None # avoid warning
+    #pandas.options.mode.chained_assignment = None # avoid warning
     New_X_one_column = X_one_column
     for i in range(0,len(New_X_one_column)) :
         n = 1
@@ -376,7 +383,7 @@ def privacy_step_coin(X_one_column,p):
             New_X_one_column[i] =  class_of_X[random_i]
     return New_X_one_column
 
-"""
+
 
 
 
