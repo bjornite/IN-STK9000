@@ -22,7 +22,7 @@ def get_data():
             'property', 'age', 'other installments', 'housing', 'credits',
             'job', 'persons', 'phone', 'foreign']
     target = 'repaid'
-    df = pandas.read_csv('C:\DomosLabs/IN-STK9000/IN-STK9000/Project 1/data/german.data', sep=' ', names=features+[target])
+    df = pandas.read_csv('../data/german.data', sep=' ', names=features+[target])
     numeric_colums = df.columns[df.dtypes == 'int64']
     categorical_columns = df.columns[df.dtypes == 'object']
     dummies = pandas.get_dummies(df[categorical_columns], drop_first=True)
