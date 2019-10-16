@@ -10,7 +10,7 @@ from sklearn.model_selection import GridSearchCV
 import numpy as np
 import pandas as pd
 
-"""
+
 stderr = sys.stderr
 sys.stderr = open(os.devnull, 'w')
 
@@ -24,7 +24,7 @@ from keras.layers import Dense, Dropout, BatchNormalization
 from keras.optimizers import RMSprop
 from keras import regularizers
 sys.stderr = stderr
-"""
+
 
 # For kNNbanker
 from sklearn import metrics
