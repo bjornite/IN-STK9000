@@ -13,7 +13,7 @@ import pandas as pd
 
 stderr = sys.stderr
 sys.stderr = open(os.devnull, 'w')
-"""
+
 # For NeuralBanker
 import tensorflow as tf
 
@@ -25,7 +25,7 @@ from keras.optimizers import RMSprop
 from keras import regularizers
 sys.stderr = stderr
 
-"""
+
 # For kNNbanker
 from sklearn import metrics
 from sklearn.pipeline import make_pipeline
