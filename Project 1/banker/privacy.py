@@ -1,7 +1,7 @@
 # This function take as parameters an array X_one_column with the corresponding column that we want to anonymize.
 # For instance X['age']. It wiil return the new array with interval of value and not numérical value.
 def privacy_step(X_one_column):
-    pandas.options.mode.chained_assignment = None # This avoid the warn beacause, this function will write into the original frame.
+    #pandas.options.mode.chained_assignment = None # This avoid the warn beacause, this function will write into the original frame.
     max = X_one_column.max()
     min = X_one_column.min()
     difference = max - min
@@ -38,31 +38,20 @@ def privacy_epsilon(X_one_column,epsilon):
     X_with_noise = X_one_column + local_noise
     return X_with_noise
 
-
-##############
-# TO TEST MY 2 FUNCTIONS
-# print(privacy_step(X['age']))
-# print(privacy_epsilon(X['age'],0.1))
-###############
-
-import numbers
-## Test function
-def test_decision_maker(X_test, y_test, interest_rate, decision_maker):
-    n_test_examples = len(X_test)
-    utility = 0
-
-    ## Example test function - this is only an unbiased test if the data has not been seen in training
-    for t in range(n_test_examples):
-        action = decision_maker.get_best_action(X_test.iloc[t])
-        if not isinstance(action, numbers.Number):
-            action = action[0]
-        good_loan = y_test.iloc[t] # assume the labels are correct
-        duration = X_test['duration'].iloc[t]
-        amount = X_test['amount'].iloc[t]
-        # If we don't grant the loan then nothing happens
-        if (action==1):
-            if (good_loan != 1):
-                utility -= amount
-            else:
-                utility += amount*(pow(1 + interest_rate, duration) - 1)
-    return utility
+# This function is for randomising responses. The function return an array with anonymized data.
+# The principe is to flip a coin and if it comes heads, respond truthfully.
+# Otherwise, change the data randomly
+def privacy_step_coin(X_one_column,p):
+    #pandas.options.mode.chained_assignment = None # avoid warning
+    New_X_one_column = X_one_column
+    for i in range(0,len(New_X_one_column)) :
+        n = 1
+        coin = numpy.random.binomial(n,p)
+        # if coin = 1 we do nothing because we say the truth
+        if coin ==0:
+            #we chose aleatory in the list of type of data.
+            class_of_X = list(set(New_X_one_column))
+            high_value_class = len(class_of_X)-1
+            random_i = numpy.random.randint(low=0,high=high_value_class)
+            New_X_one_column[i] =  class_of_X[random_i]
+    return New_X_one_column

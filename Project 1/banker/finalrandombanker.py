@@ -221,7 +221,7 @@ class kNNbanker(BankerBase):
 
     def kNN(self, X, y):
         scaler = StandardScaler()
-        base_cls = KNeighborsClassifier(n_neighbors = 15)
+        base_cls = KNeighborsClassifier()
         knn = BaggingClassifier(base_estimator = base_cls,
                                 n_estimators = 100)
 
@@ -255,6 +255,21 @@ class kNNbanker(BankerBase):
         y = self.parse_y(y.values.reshape(-1,1).ravel())
         X = self.parse_X(X)
         self.model = self.kNN(X, y)
+
+
+        k_range = list(range(1, 200))
+        weight_options = ['uniform', 'distance']
+        param_grid = dict(n_neighbors=k_range, weights=weight_options)
+        knn = KNeighborsClassifier()
+        clf = GridSearchCV(knn, param_grid, cv=5, scoring='accuracy')
+        clf.fit(X,y)
+        print(pd.DataFrame(clf.cv_results_)[['mean_test_score', 'std_test_score', 'params']])
+        print("====================")
+        print(clf.best_score_)
+        print(clf.best_params_)
+        print(clf.best_estimator_)
+        
+
         self.model.fit(X,y)
 
     def get_best_action(self, X):
@@ -267,6 +282,11 @@ class kNNbanker(BankerBase):
 
     def predict(self,Xtest):
         return self.model.predict(Xtest)
+
+
+
+
+
 
 
 class RandomForestClassifierBanker(BankerBase):
@@ -325,64 +345,84 @@ class RandomForestClassifierBanker(BankerBase):
         return importance
         print(importance)
 
+# This class give the best parameters for our model.
+class RandomForestClassifierOptimization(BankerBase):
+    model = None
 
-# This function take as parameters an array X_one_column with the corresponding column that we want to anonymize.
-    # For instance X['age']. It wiil return the new array with interval of value and not numérical value.
-def privacy_step(X_one_column):
-    #pandas.options.mode.chained_assignment = None # This avoid the warn beacause, this function will write into the original frame.
-    max = X_one_column.max()
-    min = X_one_column.min()
-    difference = max - min
-    # Calculates the number of values in a step
-    step = difference / 4
-    # Replacement of each value with the corresponding interval
-    for i in range(0,len(X_one_column)) :
+    def __init__(self):
+        self.interest_rate = None
 
-        if min <= X_one_column[i] < min+step :
-            step1 = "[{min} - {vars}[".format(min=min, vars=min+step)
-            X_one_column[i]=step1
+    def set_interest_rate(self, interest_rate):
+        self.interest_rate = interest_rate
 
-        elif min+step <= X_one_column[i] < min+2*step :
-            step2 = "[{min} - {vars}[".format(min=min+step, vars=min+2*step)
-            X_one_column[i]=step2
+    def parse_y(self, y):
+        y[np.where(y == 2)] = 0
+        return y
 
-        elif min+2*step <= X_one_column[i] < min+3*step :
-            step3 = "[{min} - {vars}[".format(min=min+2*step, vars=min+3*step)
-            X_one_column[i]=step3
+    def parse_X(self, X):
+        return X
 
-        elif min+3*step <= X_one_column[i] < max :
-            step4 = "[{min} - {vars}]".format(min=min+3*step, vars=max)
-            X_one_column[i]=step4
-    return X_one_column
+    def build_forest(self, X, y):
+        #model = RandomForestClassifier(n_estimators=130)
 
-#### Laplace mechanism for centralised DP
-# This function take as parameters an array X_one_column with the corresponding column that we want to anonymize and the epsilon. For instance X['age'].
-# It wiil return the new array with data and noise for each value.
-def privacy_epsilon(X_one_column,epsilon):
-    max = X_one_column.max()
-    min = X_one_column.min()
-    central_sensitivity = max / len(X_one_column)
-    local_noise = numpy.random.laplace(scale=central_sensitivity/epsilon, size=len(X_one_column))
-    X_with_noise = X_one_column + local_noise
-    return X_with_noise
+        param_grid = {
+            'n_estimators': np.linspace(10, 200).astype(int),
+            'max_depth': [None] + list(np.linspace(3, 20).astype(int)),
+            'max_features': ['auto', 'sqrt', None] + list(np.arange(0.5, 1, 0.1)),
+            'max_leaf_nodes': [None] + list(np.linspace(10, 50, 500).astype(int)),
+            'min_samples_split': [2, 5, 10],
+            'bootstrap': [True, False]
+        }
 
-# This function is for randomising responses. The function return an array with anonymized data.
-# The principe is to flip a coin and if it comes heads, respond truthfully.
-# Otherwise, change the data randomly
-def privacy_step_coin(X_one_column,p):
-    #pandas.options.mode.chained_assignment = None # avoid warning
-    New_X_one_column = X_one_column
-    for i in range(0,len(New_X_one_column)) :
-        n = 1
-        coin = numpy.random.binomial(n,p)
-        # if coin = 1 we do nothing because we say the truth
-        if coin ==0:
-            #we chose aleatory in the list of type of data.
-            class_of_X = list(set(New_X_one_column))
-            high_value_class = len(class_of_X)-1
-            random_i = numpy.random.randint(low=0,high=high_value_class)
-            New_X_one_column[i] =  class_of_X[random_i]
-    return New_X_one_column
+        # Estimator for use in random search
+        estimator = RandomForestClassifier()
+
+        # Create the random search model
+        model = RandomizedSearchCV(estimator, param_grid, n_jobs = -1,
+                                scoring = 'roc_auc', cv = 3,
+                                n_iter = 10, verbose = 1)
+
+        return model
+
+
+    def expected_utility(self, X):
+        p = self.get_proba(self.parse_X(X))
+        gain = self.calculate_gain(X)
+        expected_utilitiy = (gain*p.flatten())-(X['amount']*(1-p.flatten()))
+        return expected_utilitiy
+
+    def calculate_gain(self, X):
+        return X['amount']*((1 + self.interest_rate)**(X['duration']) - 1)
+
+    def fit(self, X, y):
+        y = self.parse_y(y.values.reshape(-1,1).ravel())
+        X = self.parse_X(X)
+        self.model = self.build_forest(X, y)
+        self.model.fit(X,y)
+
+    def get_proba(self, X):
+        return best_model.predict_proba(np.array(X).reshape(1,-1))[:,1]
+
+    def best_model(self):
+        print(best_model)
+        return self.model.best_estimator_
+
+    def get_best_action(self, X):
+        actions = (self.expected_utility(X) > 0).astype(int).flatten()
+        actions[np.where(actions == 0)] = 2
+        return actions
+
+    def predict(self,Xtest):
+        return self.best_model.predict(Xtest)
+
+    #def predict_proba(self, Xtest):
+        #return self.model.predict_proba(Xtest)
+        #deze staat hierboven al als get_proba
+
+    def get_importances(self, X):
+        importance = list(zip(X, self.model.feature_importances_))
+        return importance
+        print(importance)
 
 
 
