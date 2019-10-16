@@ -10,7 +10,7 @@ from sklearn.model_selection import GridSearchCV
 import numpy as np
 import pandas as pd
 
-
+"""
 stderr = sys.stderr
 sys.stderr = open(os.devnull, 'w')
 
@@ -24,7 +24,7 @@ from keras.layers import Dense, Dropout, BatchNormalization
 from keras.optimizers import RMSprop
 from keras import regularizers
 sys.stderr = stderr
-
+"""
 
 # For kNNbanker
 from sklearn import metrics
@@ -221,7 +221,7 @@ class kNNbanker(BankerBase):
 
     def kNN(self, X, y):
         scaler = StandardScaler()
-        base_cls = KNeighborsClassifier(n_neighbors = 15)
+        base_cls = KNeighborsClassifier()
         knn = BaggingClassifier(base_estimator = base_cls,
                                 n_estimators = 100)
 
@@ -255,6 +255,21 @@ class kNNbanker(BankerBase):
         y = self.parse_y(y.values.reshape(-1,1).ravel())
         X = self.parse_X(X)
         self.model = self.kNN(X, y)
+
+
+        k_range = list(range(1, 200))
+        weight_options = ['uniform', 'distance']
+        param_grid = dict(n_neighbors=k_range, weights=weight_options)
+        knn = KNeighborsClassifier()
+        clf = GridSearchCV(knn, param_grid, cv=5, scoring='accuracy')
+        clf.fit(X,y)
+        print(pd.DataFrame(clf.cv_results_)[['mean_test_score', 'std_test_score', 'params']])
+        print("====================")
+        print(clf.best_score_)
+        print(clf.best_params_)
+        print(clf.best_estimator_)
+        
+
         self.model.fit(X,y)
 
     def get_best_action(self, X):
@@ -267,6 +282,11 @@ class kNNbanker(BankerBase):
 
     def predict(self,Xtest):
         return self.model.predict(Xtest)
+
+
+
+
+
 
 
 class RandomForestClassifierBanker(BankerBase):
