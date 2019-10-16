@@ -47,10 +47,12 @@ from kNNbanker import kNNbanker
 interest_rate = 0.005
 decision_makers = []
 #decision_makers.append(RandomBanker(interest_rate))
-decision_makers.append(kNNbanker(interest_rate))
-decision_makers.append(RandomForestClassifierBanker(interest_rate))
+#decision_makers.append(kNNbanker(interest_rate))
+#decision_makers.append(RandomForestClassifierBanker(interest_rate))
+
 #decision_makers.append(RandomForestClassifier(interest_rate))
 #decision_makers.append(NeuralBankerGridSearch(interest_rate))
+
 decision_makers.append(NeuralBanker(interest_rate))
 ### Do a number of preliminary tests by splitting the data in parts
 from sklearn.model_selection import train_test_split

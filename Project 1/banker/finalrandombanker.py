@@ -10,7 +10,7 @@ from sklearn.model_selection import GridSearchCV
 import numpy as np
 import pandas as pd
 
-"""
+
 stderr = sys.stderr
 sys.stderr = open(os.devnull, 'w')
 
@@ -24,7 +24,7 @@ from keras.layers import Dense, Dropout, BatchNormalization
 from keras.optimizers import RMSprop
 from keras import regularizers
 sys.stderr = stderr
-"""
+
 
 # For kNNbanker
 from sklearn import metrics
@@ -58,7 +58,7 @@ class RandomBanker(BankerBase):
 
     def get_best_action(self, X):
         return choice((1, 2))
-    
+
     def predict(self, X):
         return [choice((1, 0)) for x in X.iterrows()]
 
@@ -161,7 +161,10 @@ class NeuralBanker(BankerBase):
 
 class NeuralBankerGridSearch(BankerBase):
 
-    def __init__(self, interest_rate):
+    def __init__(self):
+        self.interest_rate = None
+
+    def set_interest_rate(self, interest_rate):
         self.interest_rate = interest_rate
 
     def fit(self, X, y):
@@ -323,8 +326,6 @@ class RandomForestClassifierBanker(BankerBase):
         print(importance)
 
 
-
-
 # This function take as parameters an array X_one_column with the corresponding column that we want to anonymize.
     # For instance X['age']. It wiil return the new array with interval of value and not numérical value.
 def privacy_step(X_one_column):
@@ -366,7 +367,7 @@ def privacy_epsilon(X_one_column,epsilon):
     return X_with_noise
 
 # This function is for randomising responses. The function return an array with anonymized data.
-# The principe is to flip a coin and if it comes heads, respond truthfully. 
+# The principe is to flip a coin and if it comes heads, respond truthfully.
 # Otherwise, change the data randomly
 def privacy_step_coin(X_one_column,p):
     #pandas.options.mode.chained_assignment = None # avoid warning

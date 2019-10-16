@@ -99,18 +99,22 @@ class NeuralBanker(BankerBase):
         base_cls.compile(loss=self.loss,
                       optimizer=self.optimizer,
                       metrics=['accuracy'])
+
         model = BaggingClassifier(base_estimator = base_cls,
                                     n_estimators = 10)
         return model
 
     def get_proba(self, X):
         return self.model.predict(X)
+        print(self.model.predict(X))
 
     def predict_proba(self, X):
         return self.model.predict(X)
+        print(self.model.predict(X))
 
     def fit(self, X, y):
-        y = self.parse_y(y.values.reshape(-1,1))
+        y = self.parse_y(y.values.reshape(-1,1)).ravel()
+        print(y.shape)
         X, y = X.values, y
         self.model = self.build_network(X, y)
         self.model.fit(X, y)
