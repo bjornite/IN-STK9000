@@ -32,10 +32,15 @@ class kNNbanker(BankerBase):
         return self.model.predict(y)
 
     def get_proba(self, X):
-        return self.model.predict_proba(np.array(X).reshape(1,-1))[0][1]
+        return self.model.predict_proba(X)[:,1]
 
     def expected_utility(self, X):
-        p = self.get_proba(self.parse_X(X.values.reshape(1, -1)))
+        import numbers
+        if isinstance(X.values[0], numbers.Number):
+            X_vals = X.values.reshape(1,-1)
+        else:
+            X_vals = X.values
+        p = self.get_proba(X_vals)
         gain = self.calculate_gain(X)
         expected_utility = gain*p.flatten()-X['amount']*(1-p.flatten())
         return expected_utility
@@ -45,13 +50,12 @@ class kNNbanker(BankerBase):
 
     def fit(self, X, y):
         y = self.parse_y(y.values.reshape(-1,1).ravel())
-        X = self.parse_X(X)
         self.model = self.kNN(X, y)
         self.model.fit(X,y)
 
     def get_best_action(self, X):
-        actions = (self.expected_utility(X) > 0).astype(int).flatten()
-        actions[np.where(actions == 0)] = 2
+        actions = (self.expected_utility(X) > 0).astype(int)
+        actions[actions == 0] = 2
         return actions
         
     def predict(self,Xtest):

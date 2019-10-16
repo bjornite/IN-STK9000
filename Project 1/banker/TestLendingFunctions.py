@@ -45,7 +45,7 @@ def privacy_epsilon(X_one_column,epsilon):
 # print(privacy_epsilon(X['age'],0.1))
 ###############
 
-
+import numbers
 ## Test function
 def test_decision_maker(X_test, y_test, interest_rate, decision_maker):
     n_test_examples = len(X_test)
@@ -54,6 +54,8 @@ def test_decision_maker(X_test, y_test, interest_rate, decision_maker):
     ## Example test function - this is only an unbiased test if the data has not been seen in training
     for t in range(n_test_examples):
         action = decision_maker.get_best_action(X_test.iloc[t])
+        if not isinstance(action, numbers.Number):
+            action = action[0]
         good_loan = y_test.iloc[t] # assume the labels are correct
         duration = X_test['duration'].iloc[t]
         amount = X_test['amount'].iloc[t]

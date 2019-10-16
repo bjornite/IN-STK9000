@@ -26,10 +26,15 @@ class RandomForestClassifierBanker(BankerBase):
 
     def get_proba(self, X):
         ##print("proba")
-        return self.model.predict_proba(np.array(X).reshape(1,-1))[:,1]
+        return self.model.predict_proba(X)[:,1]
 
     def expected_utility(self, X):
-        p = self.get_proba(self.parse_X(X))
+        import numbers
+        if isinstance(X.values[0], numbers.Number):
+            X_vals = X.values.reshape(1,-1)
+        else:
+            X_vals = X.values
+        p = self.get_proba(self.parse_X(X_vals))
         gain = self.calculate_gain(X)
         ##print("Gain")
         #print(gain)
@@ -56,8 +61,8 @@ class RandomForestClassifierBanker(BankerBase):
         self.model.fit(X,y)
 
     def get_best_action(self, X):
-        actions = (self.expected_utility(X) > 0).astype(int).flatten()
-        actions[np.where(actions == 0)] = 2
+        actions = (self.expected_utility(X) > 0).astype(int)
+        actions[actions == 0] = 2
         ##print('action')
         ##print(actions)
 
