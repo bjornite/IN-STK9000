@@ -21,6 +21,9 @@ from sklearn.metrics import pairwise_distances_argmin
 np.random.seed(200)
 Xtrain, Xholdout, ytrain, yholdout = train_test_split(features, outcome, test_size = 0.2)
 
+symptoms_true = ([Xtrain[:, 129:130]] == 1)
+symptoms_false = ([Xtrain[:, 129:130]] == 0)
+
 # K-means clustering
 k = 5
 kmeans = cluster.KMeans(n_clusters=k)
