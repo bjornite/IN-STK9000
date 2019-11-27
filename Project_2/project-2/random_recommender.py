@@ -2,12 +2,12 @@
 # A simple reference recommender
 #
 #
-# This is a medical scenario with historical data. 
+# This is a medical scenario with historical data.
 #
 # General functions
 #
 # - set_reward
-# 
+#
 # There is a set of functions for dealing with historical data:
 #
 # - fit_data
@@ -43,7 +43,7 @@ class RandomRecommender:
     # Set the reward function r(a, y)
     def set_reward(self, reward):
         self.reward = reward
-    
+
     ##################################
     # Fit a model from patient data.
     #
@@ -88,7 +88,7 @@ class RandomRecommender:
         #print("Recommending")
         return np.ones(self.n_actions) / self.n_actions;
 
-    
+
     # Return recommendations for a specific user datum
     # This should be an integer in range(self.n_actions)
     def recommend(self, user_data):
