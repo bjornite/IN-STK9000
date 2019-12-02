@@ -1,5 +1,6 @@
 import numpy as np
 import pandas
+
 def default_reward_function(action, outcome):
     return -0.1 * (action!= 0) + outcome
 
@@ -18,17 +19,17 @@ def test_policy(generator, policy, reward_function, T):
         #print("x: ", x, "a: ", a, "y:", y, "r:", r)
     return u
 
-features = pandas.read_csv('data/medical/historical_X.dat', header=None, sep=" ").values
-actions = pandas.read_csv('data/medical/historical_A.dat', header=None, sep=" ").values
-outcome = pandas.read_csv('data/medical/historical_Y.dat', header=None, sep=" ").values
+features = pandas.read_csv('../medical/historical_X.dat', header=None, sep=" ").values
+actions = pandas.read_csv('../medical/historical_A.dat', header=None, sep=" ").values
+outcome = pandas.read_csv('../medical/historical_Y.dat', header=None, sep=" ").values
 observations = features[:, :128]
 labels = features[:,128] + features[:,129]*2
 
 import data_generation
 import random_recommender
-policy_factory = random_recommender.RandomRecommender
-import reference_recommender
-policy_factory = reference_recommender.HistoricalRecommender
+#policy_factory = random_recommender.RandomRecommender
+import recommender_classes
+policy_factory = recommender_classes.ImprovedRecommender
 
 ## First test with the same number of treatments
 print("---- Testing with only two treatments ----")
@@ -64,7 +65,3 @@ result = test_policy(generator, policy, default_reward_function, n_tests)
 print("Total reward:", result)
 print("Final analysis of results")
 policy.final_analysis()
-
-
-
-
