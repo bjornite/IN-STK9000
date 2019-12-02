@@ -64,9 +64,9 @@ class ImprovedRecommender:
         predictions = []
         for a in range(self.n_actions):
             estimated_outcome = self.model.predict(np.concatenate((user_data, [a])).reshape(1,-1))[0][0]
-            #outcome_prob = 1/(1 + np.exp(0.5-estimated_outcome))
-            predictions.append(estimated_outcome)
-        return predictions
+            estimated_reward = self.reward(a, estimated_outcome)
+            predictions.append(estimated_reward)
+        return np.exp(predictions)/np.sum(np.exp(predictions))
 
     def estimate_historic_utility(self, data, actions, outcome):
         estimated_outcome = self.model.predict(np.concatenate((data, actions), axis=1))
