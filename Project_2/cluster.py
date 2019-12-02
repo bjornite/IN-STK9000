@@ -33,19 +33,18 @@ import matplotlib.cm as cm
 from scipy.spatial.distance import cdist
 from yellowbrick.cluster import KElbowVisualizer
 
-"""
+
 #km = KModes(n_clusters=4, init='Cao', n_init=5, verbose=1)
 #clusters = km.fit_predict(observations)
-
-model = KModes(init='Cao', n_init = 1, n_jobs=-1)
-visualizer = KElbowVisualizer(model, k=(2,15), timings = False, metric = 'silhouette')
+"""
+model = KModes(init='Cao', n_init = 5, n_jobs=-1, verbose = 1)
+visualizer = KElbowVisualizer(model, k=(2,15), timings = False, locate_elbow = False)
 visualizer.fit(observations)        # Fit the data to the visualizer
-visualizer.show()
-
+visualizer.show(outpath = "Images/kelbow_kmodes.png")
 
 cost = []
 for num_clusters in list(range(1,15)):
-    kmode = KModes(n_clusters=num_clusters, init = "Cao", n_init = 1, verbose=1)
+    kmode = KModes(n_clusters=num_clusters, init = "Cao", verbose=1)
     kmode.fit_predict(observations)
     cost.append(kmode.cost_)
 
@@ -53,26 +52,37 @@ y = np.array([i for i in range(1,15,1)])
 plt.plot(y,cost)
 plt.xlabel('Clusters')
 plt.ylabel('Cost')
+plt.savefig('Images/cost_KModes')
 plt.show()
-
-range_n_clusters =[2,3,4,5,6,7,8] #,9,10,11,12,13,14,15]
-
-for n_clusters in range_n_clusters:
-    clusterer = KModes(n_clusters=n_clusters, init='Cao', n_jobs=-1)
-    cluster_labels = clusterer.fit_predict(data)
-
-    silhouette_avg = silhouette_score(data, cluster_labels)
-    print("For n_clusters =", n_clusters,
-          "The average silhouette_score is :", silhouette_avg)
-
 """
+
 # Use PCA to reduce the dimensionality
 from sklearn.decomposition import PCA
 
-pca = PCA(.50)
+pca = PCA(.70)
 data_red = pca.fit_transform(observations)
 print(pca.n_components_)
 
+model = KModes(init='Cao', n_jobs=-1, verbose = 1)
+visualizer = KElbowVisualizer(model, k=(2,15), timings = False, locate_elbow = False)
+visualizer.fit(data_red)        # Fit the data to the visualizer
+visualizer.show(outpath = "Images/kelbow_kmodes_pca.png")
+plt.show()
+
+cost = []
+for num_clusters in list(range(1,15)):
+    kmode = KModes(n_clusters=num_clusters, init = "Cao", verbose=1)
+    kmode.fit_predict(data_red)
+    cost.append(kmode.cost_)
+
+y = np.array([i for i in range(1,15,1)])
+plt.plot(y,cost)
+plt.xlabel('Clusters')
+plt.ylabel('Cost')
+plt.savefig('Images/cost_KModes_PCA')
+
+
+"""
 k_max = 10
 models = [cluster.KMeans(k).fit(observations) for k in range(1, k_max)]
 dplot = m.inertia_ for m in models
@@ -92,7 +102,6 @@ visualizer.show()
 
 
 
-"""
 # K-means clustering
 k_max = 10
 models = [cluster.KMeans(k).fit(observations) for k in range(1, k_max)]
