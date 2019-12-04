@@ -11,6 +11,76 @@ from keras import regularizers
 from sklearn.model_selection import GridSearchCV
 
 
+class HistoricalRecommender:
+
+# fit on actions instead of outcome
+    model = None
+
+    def __init__(self, n_actions, n_outcomes):
+        self.n_actions = n_actions
+        self.n_outcomes = n_outcomes
+        self.reward = self._default_reward
+
+    def _default_reward(self, action, outcome):
+        return -0.1*action + outcome
+
+    def set_reward(self, reward):
+        self.reward = reward
+
+    def fit_treatment_outcome(self, data, actions, outcome):
+        print("Fitting treatment outcomes")
+        param_grid = {'layer_sizes': [[32, 16], [64, 16]],
+        'batch_size': [5, 10],
+        'epochs': [1, 5],
+        'optimizer': ['Adam', 'sgd'],
+        'loss': ['mse'],
+        'alpha': [0.001, 0.0001]}
+        #self.model = GridSearchCV(NNDoctor(), param_grid, cv=10, n_jobs=4)
+        self.model = NNDoctor(n_actions=self.n_actions, n_outcomes=self.n_outcomes)
+        self.model.fit(data, actions)
+        #print(self.model.best_params_)
+        return self.model
+
+    def estimate_utility(self, data, actions, outcome, policy=None):
+        if policy is None:
+            return self.reward(actions, outcome).mean()
+        else:
+            policy_actions = np.array([policy.recommend(x) for x in data])
+            predicted_outcomes = self.model.predict(np.concatenate((data, policy_actions.reshape(-1,1)), axis=1))
+            return self.reward(policy_actions, predicted_outcomes.reshape(1,-1)).mean()
+
+    def predict_proba(self, data, treatment):
+        #predictions = self.model.predict(np.concatenate((data, [treatment])).reshape(1,-1)).ravel()
+        pred = self.model.predict(data)
+        return pred
+
+    def predict_classes(self, data, treatment):
+        #predictions = self.model.predict(np.concatenate((data, [treatment])).reshape(1,-1)).ravel()
+        predictions_classes = self.model.predict_classes(data)
+        return predictions_classes
+
+    def get_action_probabilities(self, user_data):
+        #print("Recommending")
+        predictions = []
+        for a in range(self.n_actions):
+            #estimated_outcome = self.model.predict(np.concatenate((user_data, [a])).reshape(1,-1))[0][0]
+            estimated_outcome = self.model.predict(user_data.reshape(1,-1))[0][0]
+            estimated_reward = self.reward(a, estimated_outcome)
+            predictions.append(estimated_reward)
+        return np.exp(predictions)/np.sum(np.exp(predictions))
+
+#here the 'predict_classes' predicts an action, since the model is fitted on the actions.
+    def recommend(self, user_data):
+        return np.asscalar(self.model.predict_classes(user_data.reshape(1,-1)))
+        #return np.argmax(self.get_action_probabilities(user_data))
+
+    def observe(self, user, action, outcome):
+        return None
+
+    def final_analysis(self):
+        return None
+
+
 class ImprovedRecommender:
 
     model = None
@@ -37,10 +107,10 @@ class ImprovedRecommender:
         'optimizer': ['Adam', 'sgd'],
         'loss': ['mse'],
         'alpha': [0.001, 0.0001]}
-        self.model = GridSearchCV(NNDoctor(), param_grid, cv=10, n_jobs=4)
-        #self.model = NNDoctor()
+        #self.model = GridSearchCV(NNDoctor(), param_grid, cv=10, n_jobs=4)
+        self.model = NNDoctor()
         self.model.fit(np.concatenate((X, a), axis=1), y)
-        print(self.model.best_params_)
+        #print(self.model.best_params_)
 
     def fit_treatment_outcome(self, data, actions, outcome):
         print("Fitting treatment outcomes")
@@ -104,6 +174,7 @@ class NNDoctor:
         self.optimizer = optimizer
         self.loss = loss
         self.alpha = alpha
+
     def _default_reward(self, action, outcome):
         return -0.1*action + outcome
 
@@ -117,6 +188,9 @@ class NNDoctor:
 
     def predict_proba(self, X):
         return self.model.predict(X)
+
+    def predict_classes(self, X):
+        return self.model.predict_classes(X)
 
     def fit(self, X, y):
         self.model = self.build_network(X, y)
@@ -134,3 +208,6 @@ class NNDoctor:
                       optimizer=self.optimizer,
                       metrics=['accuracy'])
         return model
+
+    def score(self, X, y):
+        return (self.model.predict(X)**2 - y**2).mean()

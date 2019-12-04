@@ -27,41 +27,53 @@ labels = features[:,128] + features[:,129]*2
 
 import data_generation
 import random_recommender
-#policy_factory = random_recommender.RandomRecommender
+policy_factory = random_recommender.RandomRecommender
+RR = random_recommender.RandomRecommender
 import recommender_classes
-policy_factory = recommender_classes.ImprovedRecommender
+HR = recommender_classes.HistoricalRecommender
+IR = recommender_classes.ImprovedRecommender
 
-## First test with the same number of treatments
-print("---- Testing with only two treatments ----")
+policies = [RR, HR, IR]
 
-print("Setting up simulator")
-generator = data_generation.DataGenerator(matrices="./generating_matrices.mat")
-print("Setting up policy")
-policy = policy_factory(generator.get_n_actions(), generator.get_n_outcomes())
-## Fit the policy on historical data first
-print("Fitting historical data to the policy")
-policy.fit_treatment_outcome(features, actions, outcome)
-## Run an online test with a small number of actions
-print("Running an online test")
-n_tests = 1000
-result = test_policy(generator, policy, default_reward_function, n_tests)
-print("Total reward:", result)
-print("Final analysis of results")
-policy.final_analysis()
+print(policies)
 
-## First test with the same number of treatments
-print("--- Testing with an additional experimental treatment and 126 gene silencing treatments ---")
-print("Setting up simulator")
-generator = data_generation.DataGenerator(matrices="./big_generating_matrices.mat")
-print("Setting up policy")
-policy = policy_factory(generator.get_n_actions(), generator.get_n_outcomes())
-## Fit the policy on historical data first
-print("Fitting historical data to the policy")
-policy.fit_treatment_outcome(features, actions, outcome)
-## Run an online test with a small number of actions
-print("Running an online test")
-n_tests = 1000
-result = test_policy(generator, policy, default_reward_function, n_tests)
-print("Total reward:", result)
-print("Final analysis of results")
-policy.final_analysis()
+for poly in policies:
+    print('Recommender:', poly)
+
+    ## First test with the same number of treatments
+    print("---- Testing with only two treatments ----")
+
+    print("Setting up simulator")
+    generator = data_generation.DataGenerator(matrices="./generating_matrices.mat")
+    print("Setting up policy")
+    policy = poly(generator.get_n_actions(), generator.get_n_outcomes())
+    ## Fit the policy on historical data first
+    print("Fitting historical data to the policy")
+    policy.fit_treatment_outcome(features, actions, outcome)
+    ## Run an online test with a small number of actions
+    print("Running an online test")
+    n_tests = 1000
+    result = test_policy(generator, policy, default_reward_function, n_tests)
+    print("Total reward:", result)
+    print("Final analysis of results")
+    policy.final_analysis()
+
+
+    ## First test with the same number of treatments
+    print("--- Testing with an additional experimental treatment and 126 gene silencing treatments ---")
+    print("Setting up simulator")
+    generator = data_generation.DataGenerator(matrices="./big_generating_matrices.mat")
+    print("Setting up policy")
+    policy = policy_factory(generator.get_n_actions(), generator.get_n_outcomes())
+    ## Fit the policy on historical data first
+    print("Fitting historical data to the policy")
+    policy.fit_treatment_outcome(features, actions, outcome)
+    ## Run an online test with a small number of actions
+    print("Running an online test")
+    n_tests = 1000
+    result = test_policy(generator, policy, default_reward_function, n_tests)
+    print("Total reward:", result)
+    print("Final analysis of results")
+    policy.final_analysis()
+
+    print('-----------------------------------------')
