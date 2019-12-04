@@ -37,10 +37,10 @@ class ImprovedRecommender:
         'optimizer': ['Adam', 'sgd'],
         'loss': ['mse'],
         'alpha': [0.001, 0.0001]}
-        self.model = GridSearchCV(NNDoctor(), param_grid, cv=10, n_jobs=4)
-        #self.model = NNDoctor()
+        #self.model = GridSearchCV(NNDoctor(), param_grid, cv=10, n_jobs=4)
+        self.model = NNDoctor()
         self.model.fit(np.concatenate((X, a), axis=1), y)
-        print(self.model.best_params_)
+        #print(self.model.best_params_)
 
     def fit_treatment_outcome(self, data, actions, outcome):
         print("Fitting treatment outcomes")
@@ -134,3 +134,6 @@ class NNDoctor:
                       optimizer=self.optimizer,
                       metrics=['accuracy'])
         return model
+
+    def score(self, X, y):
+        return (self.model.predict(X)**2 - y**2).mean()
