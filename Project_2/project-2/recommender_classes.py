@@ -37,14 +37,15 @@ class ImprovedRecommender:
         'optimizer': ['Adam', 'sgd'],
         'loss': ['mse'],
         'alpha': [0.001, 0.0001]}
-        #self.model = GridSearchCV(NNDoctor(), param_grid, cv=10, n_jobs=4)
-        self.model = NNDoctor()
-        self.model.fit(np.concatenate((X, a), axis=1), y)
+        #model = GridSearchCV(NNDoctor(), param_grid, cv=10, n_jobs=4)
+        model = NNDoctor()
+        model.fit(np.concatenate((X, a), axis=1), y)
         #print(self.model.best_params_)
+        return model
 
     def fit_treatment_outcome(self, data, actions, outcome):
         print("Fitting treatment outcomes")
-        self.train_model(data, actions, outcome)
+        self.model = self.train_model(data, actions, outcome)
         return self.model
 
     def estimate_utility(self, data, actions, outcome, policy=None):
@@ -52,7 +53,8 @@ class ImprovedRecommender:
             return self.reward(actions, outcome).mean()
         else:
             policy_actions = np.array([policy.recommend(x) for x in data])
-            predicted_outcomes = self.model.predict(np.concatenate((data, policy_actions.reshape(-1,1)), axis=1))
+            model = train_model(data, actions, outcome)
+            predicted_outcomes = model.predict(np.concatenate((data, policy_actions.reshape(-1,1)), axis=1))
             return self.reward(policy_actions, predicted_outcomes.reshape(1,-1)).mean()
 
     def predict_proba(self, data, treatment):
@@ -129,7 +131,7 @@ class NNDoctor:
         model = Sequential()
         for layer_size in self.layer_sizes:
             model.add(Dense(layer_size, activation='elu',kernel_regularizer=regularizers.l2(self.alpha)))
-        model.add(Dense(1, activation='sigmoid'))
+        model.add(Dense(self.n_outcomes, activation='sigmoid'))
         model.compile(loss=self.loss,
                       optimizer=self.optimizer,
                       metrics=['accuracy'])
