@@ -9,17 +9,24 @@ from keras.optimizers import RMSprop
 from keras import regularizers
 
 from sklearn.model_selection import GridSearchCV
+from sklearn.decomposition import PCA
 
 
 class HistoricalRecommender:
 
 # fit on actions instead of outcome
     model = None
+    pca = None
 
     def __init__(self, n_actions, n_outcomes):
         self.n_actions = n_actions
         self.n_outcomes = n_outcomes
         self.reward = self._default_reward
+
+    def pca(self, data):
+        pca = PCA(.70)
+        data_red = pca.fit_transform(data)
+        return data_red
 
     def _default_reward(self, action, outcome):
         return -0.1*action + outcome
@@ -36,8 +43,11 @@ class HistoricalRecommender:
         'loss': ['mse'],
         'alpha': [0.001, 0.0001]}
         #self.model = GridSearchCV(NNDoctor(), param_grid, cv=10, n_jobs=4)
+        self.pca = PCA(.70)
+        data_red = self.pca.fit_transform(data)
+
         self.model = NNDoctor(n_actions=self.n_actions, n_outcomes=self.n_outcomes)
-        self.model.fit(data, actions)
+        self.model.fit(data_red, actions)
         #print(self.model.best_params_)
         return self.model
 
@@ -71,7 +81,8 @@ class HistoricalRecommender:
 
 #here the 'predict_classes' predicts an action, since the model is fitted on the actions.
     def recommend(self, user_data):
-        return np.asscalar(self.model.predict_classes(user_data.reshape(1,-1)))
+        user_data_red = self.pca.transform(user_data)
+        return np.asscalar(self.model.predict_classes(user_data_red.reshape(1,-1)))
         #return np.argmax(self.get_action_probabilities(user_data))
 
     def observe(self, user, action, outcome):
@@ -108,6 +119,9 @@ class ImprovedRecommender:
         'loss': ['mse'],
         'alpha': [0.001, 0.0001]}
         #self.model = GridSearchCV(NNDoctor(), param_grid, cv=10, n_jobs=4)
+        pca = PCA(.70)
+        data_red = pca.fit_transform(data)
+
         self.model = NNDoctor()
         self.model.fit(np.concatenate((X, a), axis=1), y)
         #print(self.model.best_params_)
