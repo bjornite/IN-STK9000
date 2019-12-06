@@ -75,12 +75,11 @@ class HistoricalRecommender:
         #class 0 when the input is a 1d-vector, and the probility for each action when there are multiple action
         #because we use the .predict_classes functionality this piece of code becomes obsolete.
 
-        return None 
+        return None
 
 #here the 'predict_classes' predicts an action, since the model is fitted on the actions.
     def recommend(self, user_data):
         user_data_red = self.pca.transform(user_data.reshape(1,-1))
-        print(np.asscalar(self.model.predict_classes(user_data_red.reshape(1,-1))))
         return np.asscalar(self.model.predict_classes(user_data_red.reshape(1,-1)))
         #return np.argmax(self.get_action_probabilities(user_data_red))
 
@@ -146,10 +145,8 @@ class ImprovedRecommender:
         predictions = []
         for a in range(self.n_actions):
             estimated_outcome = self.model.predict(np.concatenate((user_data, [a])).reshape(1,-1))[0][0]
-            print('est_out', estimated_outcome)
             estimated_reward = self.reward(a, estimated_outcome)
             predictions.append(estimated_reward)
-        print(np.exp(predictions)/np.sum(np.exp(predictions)))
         return np.exp(predictions)/np.sum(np.exp(predictions))
 
     def estimate_historic_utility(self, data, actions, outcome):

@@ -35,7 +35,18 @@ IR = recommender_classes.ImprovedRecommender
 
 policies = [RR, HR, IR]
 
-print(policies)
+generator = data_generation.DataGenerator(matrices="./generating_matrices.mat")
+
+HR_ = HR(generator.get_n_actions(), generator.get_n_outcomes())
+HR_ = HR_.fit_treatment_outcome(features, actions, outcome)
+util = HR_.estimate_utility(features, actions, outcome, HR_)
+print('Expected utility historic policy', util)
+
+IR_ = IR(generator.get_n_actions(), generator.get_n_outcomes())
+util1 = IR_.estimate_utility(features, actions, outcome, IR_)
+print('Expected utility improved policy', util1)
+
+
 
 for poly in policies:
     print('Recommender:', poly)
