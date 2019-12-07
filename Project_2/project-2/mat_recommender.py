@@ -16,7 +16,7 @@ class HistoricalRecommender:
 
     model = None
     pca = None
-   
+
     def __init__(self, n_actions, n_outcomes):
         self.n_actions = n_actions
         self.n_outcomes = n_outcomes
@@ -29,7 +29,7 @@ class HistoricalRecommender:
     # Set the reward function r(a, y)
     def set_reward(self, reward):
         self.reward = reward
-    
+
     def fit_data(self, data):
         print("Preprocessing data")
         return None
@@ -75,8 +75,8 @@ class HistoricalRecommender:
         #class 0 when the input is a 1d-vector, and the probility for each action when there are multiple action
         #because we use the .predict_classes functionality this piece of code becomes obsolete.
 
-        return None 
-    
+        return None
+
     def estimate_historic_utility(self, data, actions, outcome):
         estimated_outcome = self.model.predict(np.concatenate((data, actions), axis=1))
         #outcome_prob = 1/(1 + np.exp(0.5-estimated_outcome))
@@ -105,9 +105,9 @@ class HistoricalRecommender:
 
 
 class NNDoctor:
-    def __init__(self, 
-                 n_actions=1, 
-                 n_outcomes=1, 
+    def __init__(self,
+                 n_actions=1,
+                 n_outcomes=1,
                  layer_sizes=[32, 16],
                  batch_size=10,
                  epochs=1,
@@ -125,7 +125,7 @@ class NNDoctor:
         self.alpha = alpha
     def _default_reward(self, action, outcome):
         return -0.1*action + outcome
-        
+
     def get_params(self, deep=True):
         return {k: v for k, v in self.__dict__.items() if not callable(v)}
 
@@ -146,7 +146,7 @@ class NNDoctor:
 
     def predict(self, Xtest):
         return self.model.predict(Xtest)
-    
+
     def build_network(self, X, y):
         model = Sequential()
         for layer_size in self.layer_sizes:
@@ -156,6 +156,6 @@ class NNDoctor:
                       optimizer=self.optimizer,
                       metrics=['accuracy'])
         return model
-    
+
     def score(self, X, y):
         return (self.model.predict(X)**2 - y**2).mean()

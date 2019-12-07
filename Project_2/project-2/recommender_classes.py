@@ -35,7 +35,6 @@ class HistoricalRecommender:
         'batch_size': [5, 10],
         'epochs': [1, 5],
         'optimizer': ['Adam', 'sgd'],
-        'loss': ['mse'],
         'alpha': [0.001, 0.0001]}
         #self.model = GridSearchCV(NNDoctor(), param_grid, cv=10, n_jobs=4)
         self.pca = PCA(.70)
@@ -111,7 +110,6 @@ class ImprovedRecommender:
         'batch_size': [5, 10],
         'epochs': [1, 5],
         'optimizer': ['Adam', 'sgd'],
-        'loss': ['mse'],
         'alpha': [0.001, 0.0001]}
         #self.model = GridSearchCV(NNDoctor(), param_grid, cv=10, n_jobs=4)
         self.pca = PCA(.70)

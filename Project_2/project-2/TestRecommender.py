@@ -32,21 +32,12 @@ RR = random_recommender.RandomRecommender
 import recommender_classes
 HR = recommender_classes.HistoricalRecommender
 IR = recommender_classes.ImprovedRecommender
+import mat_recommender
+HR_m = mat_recommender.HistoricalRecommender
 
-policies = [RR, HR, IR]
+policies = [RR, HR, IR, HR_m]
 
 generator = data_generation.DataGenerator(matrices="./generating_matrices.mat")
-
-HR_ = HR(generator.get_n_actions(), generator.get_n_outcomes())
-HR_ = HR_.fit_treatment_outcome(features, actions, outcome)
-util = HR_.estimate_utility(features, actions, outcome, HR_)
-print('Expected utility historic policy', util)
-
-IR_ = IR(generator.get_n_actions(), generator.get_n_outcomes())
-util1 = IR_.estimate_utility(features, actions, outcome, IR_)
-print('Expected utility improved policy', util1)
-
-
 
 for poly in policies:
     print('Recommender:', poly)
@@ -88,3 +79,10 @@ for poly in policies:
     policy.final_analysis()
 
     print('-----------------------------------------')
+
+quit()
+
+HR_ = HR(generator.get_n_actions(), generator.get_n_outcomes())
+HR_ = HR_.fit_treatment_outcome(features, actions, outcome)
+util = HR_.estimate_utility(features, actions, outcome, HR_)
+print('Expected utility historic policy', util)
