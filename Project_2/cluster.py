@@ -36,12 +36,15 @@ from yellowbrick.cluster import KElbowVisualizer
 
 #km = KModes(n_clusters=4, init='Cao', n_init=5, verbose=1)
 #clusters = km.fit_predict(observations)
-"""
+
 model = KModes(init='Cao', n_init = 5, n_jobs=-1, verbose = 1)
 visualizer = KElbowVisualizer(model, k=(2,15), timings = False, locate_elbow = False)
 visualizer.fit(observations)        # Fit the data to the visualizer
 visualizer.show(outpath = "Images/kelbow_kmodes.png")
 
+quit()
+
+"""
 cost = []
 for num_clusters in list(range(1,15)):
     kmode = KModes(n_clusters=num_clusters, init = "Cao", verbose=1)

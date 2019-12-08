@@ -9,10 +9,12 @@ from keras import regularizers
 from sklearn import linear_model
 from sklearn.model_selection import GridSearchCV
 from sklearn.preprocessing import OneHotEncoder
+from sklearn.decomposition import PCA
 
 
-class ImprovedRecommender:
+class HistoricalRecommender:
 
+# fit on actions instead of outcome
     model = None
     bootstrapped_models = None
     ohe = None
@@ -21,6 +23,7 @@ class ImprovedRecommender:
     y = None
     actions = None
     i = 0
+    pca = None
 
     def __init__(self, n_actions, n_outcomes):
         self.n_actions = n_actions
@@ -33,16 +36,87 @@ class ImprovedRecommender:
     def set_reward(self, reward):
         self.reward = reward
 
-    def fit_data(self, data):
-        print("Preprocessing data")
+    def fit_treatment_outcome(self, data, actions, outcome):
+        print("Fitting treatment outcomes")
+        param_grid = {'layer_sizes': [[32, 16], [64, 16]],
+        'batch_size': [5, 10],
+        'epochs': [1, 5],
+        'optimizer': ['Adam', 'sgd'],
+        'alpha': [0.001, 0.0001]}
+        #self.model = GridSearchCV(NNDoctor(), param_grid, cv=10, n_jobs=4)
+        self.pca = PCA(.70)
+        data_red = self.pca.fit_transform(data)
+
+
+        #bootstrap the data here
+
+
+        self.model = NNDoctor(n_actions=self.n_actions, n_outcomes=self.n_outcomes)
+        self.model.fit(data_red, actions)
+        #print(self.model.best_params_)
+        return self.model
+
+    def estimate_utility(self, data, actions, outcome, policy=None):
+        if policy is None:
+            return self.reward(actions, outcome).mean()
+        else:
+            policy_actions = np.array([policy.recommend(x) for x in data])
+            #predicted_outcomes = self.model.predict(data)
+            return self.reward(policy_actions, outcome).mean() #behind outcome .reshape(1,-1)
+
+    def predict_proba(self, data, treatment):
+        #predictions = self.model.predict(np.concatenate((data, [treatment])).reshape(1,-1)).ravel()
+        pred = self.model.predict(data)
+        return pred
+
+    def predict_classes(self, data, treatment):
+        #predictions = self.model.predict(np.concatenate((data, [treatment])).reshape(1,-1)).ravel()
+        predictions_classes = self.model.predict_classes(data)
+        return predictions_classes
+
+    def get_action_probabilities(self, user_data):
+        #print("Recommending")
+
+        #the action probabilities here is just the .predict_proba from the model, which predicts the probability for
+        #class 0 when the input is a 1d-vector, and the probility for each action when there are multiple action
+        #because we use the .predict_classes functionality this piece of code becomes obsolete.
+
         return None
+
+#here the 'predict_classes' predicts an action, since the model is fitted on the actions.
+    def recommend(self, user_data):
+        user_data_red = self.pca.transform(user_data.reshape(1,-1))
+        return np.asscalar(self.model.predict_classes(user_data_red.reshape(1,-1)))
+        #return np.argmax(self.get_action_probabilities(user_data_red))
+
+    def observe(self, user, action, outcome):
+        return None
+
+    def final_analysis(self):
+        return None
+
+
+class ImprovedRecommender:
+
+    model = None
+    pca = None
+
+    def __init__(self, n_actions, n_outcomes):
+        self.n_actions = n_actions
+        self.n_outcomes = n_outcomes
+        self.reward = self._default_reward
+
+    def _default_reward(self, action, outcome):
+        return -0.1*action + outcome
+
+    def set_reward(self, reward):
+        self.reward = reward
 
     def train_model(self, X, a, y):
         param_grid = {'layer_sizes': [[32, 16], [64, 16]],
         'batch_size': [5, 10],
         'epochs': [1, 5],
         'optimizer': ['Adam', 'sgd'],
-        'loss': ['mse'],
         'alpha': [0.001, 0.0001]}
         #model = GridSearchCV(NNDoctor(), param_grid, cv=10, n_jobs=4)
         #model = NNDoctor()
@@ -50,13 +124,21 @@ class ImprovedRecommender:
         self.action_list = np.array(range(self.n_actions))
         self.actions = a
         one_hot_a = self.ohe.fit_transform(a)
-        X_a = np.concatenate((X, one_hot_a), axis=1)
-        self.X = X_a
         self.y = y
+        self.pca = PCA(.70)
+        X_red = self.pca.fit_transform(X)
+        X_a = np.concatenate((X_red, one_hot_a), axis=1)
+        self.X = X_a
         model = MultiHeadNNDoctor()
+        self.model.fit(np.concatenate((X_red, a), axis=1), y)
         model.fit(self.X, self.y)
         #print(self.model.best_params_)
         return model
+        #self.model = GridSearchCV(NNDoctor(), param_grid, cv=10, n_jobs=4)
+
+        #bootstrap the data here
+
+        #print(self.model.best_params_)
 
     def fit_treatment_outcome(self, data, actions, outcome):
         print("Fitting treatment outcomes")
@@ -94,9 +176,11 @@ class ImprovedRecommender:
 
     def recommend(self, user_data):
         # Use bootstrapped Thompson sampling to recommend actions
-        a_probs = self.get_action_probabilities(user_data)
+        user_data_red = self.pca.transform(user_data.reshape(1,-1)).ravel()
+        a_probs = self.get_action_probabilities(user_data_red)
         use_head = np.random.randint(len(a_probs))
         return np.argmax(a_probs[use_head])
+        #print(np.argmax(self.get_action_probabilities(user_data_red)))
 
     def observe(self, user, action, outcome):
         return None
@@ -218,10 +302,10 @@ class NNDoctor:
     def __init__(self,
                  n_actions=1,
                  n_outcomes=1,
-                 layer_sizes=[32, 16],
-                 batch_size=10,
-                 epochs=1,
-                 optimizer="sgd",
+                 layer_sizes=[64, 32, 16],
+                 batch_size=32,
+                 epochs=10,
+                 optimizer="adam",
                  loss="binary_crossentropy",
                  alpha = 0.001):
         self.n_actions = n_actions
@@ -247,6 +331,9 @@ class NNDoctor:
 
     def predict_proba(self, X):
         return self.model.predict(X)
+
+    def predict_classes(self, X):
+        return self.model.predict_classes(X)
 
     def fit(self, X, y):
         self.model = self.build_network(X, y)
