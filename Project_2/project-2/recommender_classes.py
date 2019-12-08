@@ -46,13 +46,12 @@ class HistoricalRecommender:
         #self.model = GridSearchCV(NNDoctor(), param_grid, cv=10, n_jobs=4)
         self.pca = PCA(.70)
         data_red = self.pca.fit_transform(data)
-
-
+        self.ohe = OneHotEncoder(sparse=False, categories=[range(self.n_actions)])
+        one_hot_a = self.ohe.fit_transform(actions)
         #bootstrap the data here
 
-
-        self.model = NNDoctor(n_actions=self.n_actions, n_outcomes=self.n_outcomes)
-        self.model.fit(data_red, actions)
+        self.model = NNDoctor(n_actions=0, n_outcomes=self.n_actions)
+        self.model.fit(data_red, one_hot_a)
         #print(self.model.best_params_)
         return self.model
 
@@ -86,7 +85,7 @@ class HistoricalRecommender:
 #here the 'predict_classes' predicts an action, since the model is fitted on the actions.
     def recommend(self, user_data):
         user_data_red = self.pca.transform(user_data.reshape(1,-1))
-        return np.asscalar(self.model.predict_classes(user_data_red.reshape(1,-1)))
+        return np.asscalar(np.argmax(self.model.predict_classes(user_data_red.reshape(1,-1))))
         #return np.argmax(self.get_action_probabilities(user_data_red))
 
     def observe(self, user, action, outcome):
@@ -130,7 +129,6 @@ class ImprovedRecommender:
         X_a = np.concatenate((X_red, one_hot_a), axis=1)
         self.X = X_a
         model = MultiHeadNNDoctor()
-        self.model.fit(np.concatenate((X_red, a), axis=1), y)
         model.fit(self.X, self.y)
         #print(self.model.best_params_)
         return model
@@ -228,8 +226,10 @@ class AdaptiveRecommender:
         self.action_list = np.array(range(self.n_actions))
         self.actions = a
         one_hot_a = self.ohe.fit_transform(a)
+        self.pca = PCA(.70)
+        X_red = self.pca.fit_transform(X)
+        X_a = np.concatenate((X_red, one_hot_a), axis=1)
         self.data = X
-        X_a = np.concatenate((X, one_hot_a), axis=1)
         self.X = X_a
         self.y = y
         model = MultiHeadNNDoctor()
@@ -248,8 +248,8 @@ class AdaptiveRecommender:
         else:
             policy_actions = np.array([policy.recommend(x) for x in data])
             model = self.train_model(data, actions, outcome)
-            predicted_outcomes = model.predict(np.concatenate((data, policy_actions.reshape(-1,1)), axis=1))
-            return self.reward(policy_actions, predicted_outcomes.reshape(1,-1)).mean()
+            predicted_outcomes = model.predict(np.concatenate((self.pca.transform(data), self.ohe.transform(policy_actions.reshape(-1,1))), axis=1))
+            return self.reward(policy_actions, predicted_outcomes).mean()
 
     def predict_proba(self, data, treatment):
         predictions = self.model.predict(np.concatenate((data, [treatment])).reshape(1,-1)).ravel()
@@ -273,7 +273,8 @@ class AdaptiveRecommender:
 
     def recommend(self, user_data):
         # Use bootstrapped Thompson sampling to estimate 
-        a_probs = self.get_action_probabilities(user_data)
+        user_data_red = self.pca.transform(user_data.reshape(1,-1)).ravel()
+        a_probs = self.get_action_probabilities(user_data_red)
         #print(a_probs)
         use_head = np.random.randint(len(a_probs))
         return np.argmax(a_probs[use_head])
@@ -281,12 +282,13 @@ class AdaptiveRecommender:
     def observe(self, user, action, outcome):
         #Update the model with new observation
         self.i += 1
-        #self.actions = np.concatenate((self.actions, action.reshape(-1,1)), axis=0)
         one_hot_a = self.ohe.transform([[action]])
-        X_a = np.concatenate((user, one_hot_a.reshape(-1))).reshape(1,-1)
+        X_red = self.pca.transform(user.reshape(1,-1))
+        X_a = np.concatenate((X_red.reshape(-1), one_hot_a.reshape(-1))).reshape(1,-1)
         self.X = np.concatenate((self.X, X_a), axis=0)
-        self.data = np.concatenate((self.data, user.reshape(-1,1)), axis=0)
-        self.y = np.concatenate((self.y, outcome.reshape(-1,1)), axis=0)
+        self.actions = np.concatenate((self.actions, action.reshape(1,-1)), axis=0)
+        self.data = np.concatenate((self.data, user.reshape(1,-1)), axis=0)
+        self.y = np.concatenate((self.y, outcome.reshape(1,-1)), axis=0)
         if (self.i % 100 == 0): #Retrain model every 100 observations
             self.model = MultiHeadNNDoctor(self.n_actions, self.n_outcomes)
             self.model.fit(self.X, self.y)

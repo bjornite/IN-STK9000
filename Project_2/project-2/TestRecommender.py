@@ -33,10 +33,10 @@ import recommender_classes
 HR = recommender_classes.HistoricalRecommender
 import mat_recommender
 HR_m = mat_recommender.HistoricalRecommender
-policies = [random_recommender.RandomRecommender, 
-            HR,
-            HR_m,
-            recommender_classes.ImprovedRecommender, 
+policies = [#random_recommender.RandomRecommender, 
+            #HR,
+            #HR_m,
+            #recommender_classes.ImprovedRecommender, 
             recommender_classes.AdaptiveRecommender]
 for policy_factory in policies:
     print("-------------{}-------------".format(policy_factory.__name__))
@@ -52,7 +52,7 @@ for policy_factory in policies:
     policy.fit_treatment_outcome(features, actions, outcome)
     ## Run an online test with a small number of actions
     print("Running an online test")
-    n_tests = 1000
+    n_tests = 10
     result = test_policy(generator, policy, default_reward_function, n_tests)
     print("Total reward:", result)
     print("Final analysis of results")
@@ -69,7 +69,7 @@ for policy_factory in policies:
     policy.fit_treatment_outcome(features, actions, outcome)
     ## Run an online test with a small number of actions
     print("Running an online test")
-    n_tests = 1000
+    n_tests = 10
     result = test_policy(generator, policy, default_reward_function, n_tests)
     print("Total reward:", result)
     print("Final analysis of results")
@@ -79,4 +79,3 @@ HR_ = HR(generator.get_n_actions(), generator.get_n_outcomes())
 HR_ = HR_.fit_treatment_outcome(features, actions, outcome)
 util = HR_.estimate_utility(features, actions, outcome, HR_)
 print('Expected utility historic policy', util)
->>>>>>> 88e91417457925c3d8f3b23ad1166972446ba412
