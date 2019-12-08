@@ -29,7 +29,9 @@ import data_generation
 import random_recommender
 #policy_factory = random_recommender.RandomRecommender
 import recommender_classes
-policies = [random_recommender.RandomRecommender, recommender_classes.ImprovedRecommender]
+policies = [random_recommender.RandomRecommender, 
+            recommender_classes.ImprovedRecommender, 
+            recommender_classes.AdaptiveRecommender]
 for policy_factory in policies:
     print("-------------{}-------------".format(policy_factory.__name__))
     ## First test with the same number of treatments
