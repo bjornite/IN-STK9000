@@ -31,35 +31,32 @@ policy_factory = random_recommender.RandomRecommender
 RR = random_recommender.RandomRecommender
 import recommender_classes
 HR = recommender_classes.HistoricalRecommender
-IR = recommender_classes.ImprovedRecommender
 import mat_recommender
 HR_m = mat_recommender.HistoricalRecommender
-
-policies = [RR, HR, IR, HR_m]
-
-generator = data_generation.DataGenerator(matrices="./generating_matrices.mat")
-
-for poly in policies:
-    print('Recommender:', poly)
-
+policies = [#random_recommender.RandomRecommender, 
+            #HR,
+            #HR_m,
+            #recommender_classes.ImprovedRecommender, 
+            recommender_classes.AdaptiveRecommender]
+for policy_factory in policies:
+    print("-------------{}-------------".format(policy_factory.__name__))
     ## First test with the same number of treatments
     print("---- Testing with only two treatments ----")
 
     print("Setting up simulator")
     generator = data_generation.DataGenerator(matrices="./generating_matrices.mat")
     print("Setting up policy")
-    policy = poly(generator.get_n_actions(), generator.get_n_outcomes())
+    policy = policy_factory(generator.get_n_actions(), generator.get_n_outcomes())
     ## Fit the policy on historical data first
     print("Fitting historical data to the policy")
     policy.fit_treatment_outcome(features, actions, outcome)
     ## Run an online test with a small number of actions
     print("Running an online test")
-    n_tests = 1000
+    n_tests = 10
     result = test_policy(generator, policy, default_reward_function, n_tests)
     print("Total reward:", result)
     print("Final analysis of results")
     policy.final_analysis()
-
 
     ## First test with the same number of treatments
     print("--- Testing with an additional experimental treatment and 126 gene silencing treatments ---")
@@ -72,16 +69,12 @@ for poly in policies:
     policy.fit_treatment_outcome(features, actions, outcome)
     ## Run an online test with a small number of actions
     print("Running an online test")
-    n_tests = 1000
+    n_tests = 10
     result = test_policy(generator, policy, default_reward_function, n_tests)
     print("Total reward:", result)
     print("Final analysis of results")
     policy.final_analysis()
-
     print('-----------------------------------------')
-
-quit()
-
 HR_ = HR(generator.get_n_actions(), generator.get_n_outcomes())
 HR_ = HR_.fit_treatment_outcome(features, actions, outcome)
 util = HR_.estimate_utility(features, actions, outcome, HR_)
