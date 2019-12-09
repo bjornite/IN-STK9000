@@ -33,11 +33,13 @@ import recommender_classes
 HR = recommender_classes.HistoricalRecommender
 import mat_recommender
 HR_m = mat_recommender.HistoricalRecommender
-policies = [#random_recommender.RandomRecommender, 
-            #HR,
+policies = [#random_recommender.RandomRecommender,
+            HR
             #HR_m,
-            #recommender_classes.ImprovedRecommender, 
-            recommender_classes.AdaptiveRecommender]
+            #recommender_classes.ImprovedRecommender,
+            #recommender_classes.AdaptiveRecommender
+            ]
+
 for policy_factory in policies:
     print("-------------{}-------------".format(policy_factory.__name__))
     ## First test with the same number of treatments
@@ -75,7 +77,3 @@ for policy_factory in policies:
     print("Final analysis of results")
     policy.final_analysis()
     print('-----------------------------------------')
-HR_ = HR(generator.get_n_actions(), generator.get_n_outcomes())
-HR_ = HR_.fit_treatment_outcome(features, actions, outcome)
-util = HR_.estimate_utility(features, actions, outcome, HR_)
-print('Expected utility historic policy', util)

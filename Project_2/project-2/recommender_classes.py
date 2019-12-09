@@ -11,6 +11,8 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.decomposition import PCA
 
+from kneed import KneeLocator
+
 
 class HistoricalRecommender:
 
@@ -36,6 +38,19 @@ class HistoricalRecommender:
     def set_reward(self, reward):
         self.reward = reward
 
+    def n_components(self, data):
+        i=0
+        percento_range = np.arange(0.1,1,0.01)
+        n_comp = np.zeros(len(percento_range))
+        for percento in percento_range:
+            pca = PCA(percento)
+            pca.fit(data)
+            n_comp[i] = pca.n_components_
+            i = i+1
+        kn = KneeLocator(n_comp, percento_range, curve='concave', direction='increasing')
+        n_components_ = int(kn.knee)
+        return n_components_
+
     def fit_treatment_outcome(self, data, actions, outcome):
         print("Fitting treatment outcomes")
         param_grid = {'layer_sizes': [[32, 16], [64, 16]],
@@ -44,8 +59,13 @@ class HistoricalRecommender:
         'optimizer': ['Adam', 'sgd'],
         'alpha': [0.001, 0.0001]}
         #self.model = GridSearchCV(NNDoctor(), param_grid, cv=10, n_jobs=4)
-        self.pca = PCA(.70)
+
+        n_compo = self.n_components(data)
+        print('number of components', n_compo)
+
+        self.pca = PCA(n_components = n_compo)
         data_red = self.pca.fit_transform(data)
+        print(self.pca.n_components_)
         self.ohe = OneHotEncoder(sparse=False, categories=[range(self.n_actions)])
         one_hot_a = self.ohe.fit_transform(actions)
         #bootstrap the data here
@@ -187,7 +207,7 @@ class ImprovedRecommender:
         return None
 
 class AdaptiveRecommender:
-    
+
     model = None
     bootstrapped_models = None
     ohe = None
@@ -272,7 +292,7 @@ class AdaptiveRecommender:
         return self.reward(actions, estimated_outcome).mean()
 
     def recommend(self, user_data):
-        # Use bootstrapped Thompson sampling to estimate 
+        # Use bootstrapped Thompson sampling to estimate
         user_data_red = self.pca.transform(user_data.reshape(1,-1)).ravel()
         a_probs = self.get_action_probabilities(user_data_red)
         #print(a_probs)
