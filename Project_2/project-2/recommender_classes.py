@@ -112,6 +112,15 @@ class HistoricalRecommender:
         return None
 
     def final_analysis(self):
+        n_pcs = self.pca.components_.shape[0]
+
+        most_important = [np.abs(self.pca.components_[i]).argsort()[-5:][::-1] for i in range(n_pcs)]
+        dic = {'PC{}'.format(i): most_important[i] for i in range(n_pcs)}
+        df = pd.DataFrame(dic.items(), columns = ['PC', 'Important genes'])
+        df['Explained variance'] = self.pca.explained_variance_ratio_
+
+        print(df)
+
         return None
 
 
