@@ -33,8 +33,8 @@ import recommender_classes
 HR = recommender_classes.HistoricalRecommender
 import mat_recommender
 HR_m = mat_recommender.HistoricalRecommender
-policies = [#random_recommender.RandomRecommender, 
-            #HR,
+policies = [#random_recommender.RandomRecommender,
+            HR
             #HR_m,
             #recommender_classes.ImprovedRecommender, 
             recommender_classes.AdaptiveRecommender]
