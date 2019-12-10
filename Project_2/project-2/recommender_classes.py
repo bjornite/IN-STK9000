@@ -324,8 +324,8 @@ class AdaptiveRecommender:
         return None
 
     def final_analysis(self):
-        print("Estimated utility of final policy: ")
-        print(self.estimate_utility(self.data, self.actions, self.y, self))
+        #print("Estimated utility of final policy: ")
+        #print(self.estimate_utility(self.data, self.actions, self.y, self))
         return None
 
 #Support class for the neural network

@@ -36,10 +36,10 @@ HR_m = mat_recommender.HistoricalRecommender
 policies = [#random_recommender.RandomRecommender,
             HR
             #HR_m,
-            #recommender_classes.ImprovedRecommender,
-            #recommender_classes.AdaptiveRecommender
-            ]
-
+            #recommender_classes.ImprovedRecommender, 
+            recommender_classes.AdaptiveRecommender]
+n_runs = 1
+utils = {}
 for policy_factory in policies:
     print("-------------{}-------------".format(policy_factory.__name__))
     ## First test with the same number of treatments
@@ -52,13 +52,15 @@ for policy_factory in policies:
     ## Fit the policy on historical data first
     print("Fitting historical data to the policy")
     policy.fit_treatment_outcome(features, actions, outcome)
-    ## Run an online test with a small number of actions
-    print("Running an online test")
-    n_tests = 10
-    result = test_policy(generator, policy, default_reward_function, n_tests)
-    print("Total reward:", result)
-    print("Final analysis of results")
-    policy.final_analysis()
+    for n in range(n_runs):
+        ## Run an online test with a small number of actions
+        print("Running an online test")
+        n_tests = 10
+        result = test_policy(generator, policy, default_reward_function, n_tests)
+        print("Total reward:", result)
+        print("Final analysis of results")
+        utils.setdefault(policy_factory.__name__ + "_two_treatments", []).append(result)
+        policy.final_analysis()
 
     ## First test with the same number of treatments
     print("--- Testing with an additional experimental treatment and 126 gene silencing treatments ---")
@@ -70,10 +72,38 @@ for policy_factory in policies:
     print("Fitting historical data to the policy")
     policy.fit_treatment_outcome(features, actions, outcome)
     ## Run an online test with a small number of actions
-    print("Running an online test")
-    n_tests = 10
-    result = test_policy(generator, policy, default_reward_function, n_tests)
-    print("Total reward:", result)
-    print("Final analysis of results")
-    policy.final_analysis()
+    for n in range(n_runs):
+        print("Running an online test")
+        n_tests = 10
+        result = test_policy(generator, policy, default_reward_function, n_tests)
+        print("Total reward:", result)
+        print("Final analysis of results")
+        utils.setdefault(policy_factory.__name__ + "_all_treatments", []).append(result)
+        policy.final_analysis()
     print('-----------------------------------------')
+
+import json
+
+with open("test_results.txt", "w") as f:
+    json.dump(utils, f)
+
+fig1, ax = plt.subplots(figsize = (15, 5), ncols = 3)
+sns.distplot(utils, ax = ax[0])
+sns.distplot(utils_hist, ax = ax[1])
+sns.distplot(utils_imp, ax = ax[2])
+fig1.suptitle('Histograms of the utility')
+ax[0].set_title('Historic data')
+ax[1].set_title('Historic policy')
+ax[2].set_title('Improved policy')
+fig1.savefig('./Images/histograms_datared.png')
+plt.show()
+plt.clf()
+
+print("mean utility: {0:.4f}".format(np.mean(utils)))
+print("Utility std: {0:.4f}".format(np.std(utils)))
+
+print("mean utility hist: {0:.4f}".format(np.mean(utils_hist)))
+print("Utility std hist: {0:.4f}".format(np.std(utils_hist)))
+
+print("mean utility imp: {0:.4f}".format(np.mean(utils_imp)))
+print("Utility std imp: {0:.4f}".format(np.std(utils_imp)))
