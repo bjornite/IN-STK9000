@@ -61,8 +61,6 @@ class HistoricalRecommender:
         #self.model = GridSearchCV(NNDoctor(), param_grid, cv=10, n_jobs=4)
 
         n_compo = self.n_components(data)
-        print('number of components', n_compo)
-
         self.pca = PCA(n_components = n_compo)
         data_red = self.pca.fit_transform(data)
         print(self.pca.n_components_)
@@ -128,6 +126,7 @@ class ImprovedRecommender:
 
     model = None
     pca = None
+    ohe = None
 
     def __init__(self, n_actions, n_outcomes):
         self.n_actions = n_actions
@@ -139,6 +138,19 @@ class ImprovedRecommender:
 
     def set_reward(self, reward):
         self.reward = reward
+
+    def n_components(self, data):
+        i=0
+        percento_range = np.arange(0.1,1,0.01)
+        n_comp = np.zeros(len(percento_range))
+        for percento in percento_range:
+            pca = PCA(percento)
+            pca.fit(data)
+            n_comp[i] = pca.n_components_
+            i = i+1
+        kn = KneeLocator(n_comp, percento_range, curve='concave', direction='increasing')
+        n_components_ = int(kn.knee)
+        return n_components_
 
     def train_model(self, X, a, y):
         param_grid = {'layer_sizes': [[32, 16], [64, 16]],
@@ -153,11 +165,13 @@ class ImprovedRecommender:
         self.actions = a
         one_hot_a = self.ohe.fit_transform(a)
         self.y = y
-        self.pca = PCA(.70)
+        n_compo = self.n_components(X)
+        self.pca = PCA(n_components = n_compo)
         X_red = self.pca.fit_transform(X)
         X_a = np.concatenate((X_red, one_hot_a), axis=1)
         self.X = X_a
-        model = MultiHeadNNDoctor()
+        model = MultiHeadNNDoctor(self.n_actions, self.n_outcomes)
+        model.build_network(X_a, y)
         model.fit(self.X, self.y)
         #print(self.model.best_params_)
         return model
@@ -221,11 +235,11 @@ class AdaptiveRecommender:
     bootstrapped_models = None
     ohe = None
     action_list = None
-    X = None
-    data = None
-    y = None
-    actions = None
-    i = 0
+    X = []
+    data = []
+    y = []
+    actions = []
+    i = 1
 
     def __init__(self, n_actions, n_outcomes):
         self.n_actions = n_actions
@@ -237,6 +251,19 @@ class AdaptiveRecommender:
 
     def set_reward(self, reward):
         self.reward = reward
+
+    def n_components(self, data):
+        i=0
+        percento_range = np.arange(0.1,1,0.01)
+        n_comp = np.zeros(len(percento_range))
+        for percento in percento_range:
+            pca = PCA(percento)
+            pca.fit(data)
+            n_comp[i] = pca.n_components_
+            i = i+1
+        kn = KneeLocator(n_comp, percento_range, curve='concave', direction='increasing')
+        n_components_ = int(kn.knee)
+        return n_components_
 
     def fit_data(self, data):
         print("Preprocessing data")
@@ -253,16 +280,18 @@ class AdaptiveRecommender:
         #model = NNDoctor()
         self.ohe = OneHotEncoder(sparse=False, categories=[range(self.n_actions)])
         self.action_list = np.array(range(self.n_actions))
-        self.actions = a
         one_hot_a = self.ohe.fit_transform(a)
-        self.pca = PCA(.70)
+        n_compo = self.n_components(X)
+        self.pca = PCA(n_components = n_compo)
         X_red = self.pca.fit_transform(X)
         X_a = np.concatenate((X_red, one_hot_a), axis=1)
-        self.data = X
-        self.X = X_a
-        self.y = y
-        model = MultiHeadNNDoctor()
-        model.fit(self.X, self.y)
+        model = MultiHeadNNDoctor(self.n_actions, self.n_outcomes)
+        model.build_network(X_a, y)
+        model.fit(X_a, y)
+        self.actions = a.tolist()
+        self.data = X.tolist()
+        self.X = X_a.tolist()
+        self.y = y.tolist()
         #print(self.model.best_params_)
         return model
 
@@ -314,13 +343,12 @@ class AdaptiveRecommender:
         one_hot_a = self.ohe.transform([[action]])
         X_red = self.pca.transform(user.reshape(1,-1))
         X_a = np.concatenate((X_red.reshape(-1), one_hot_a.reshape(-1))).reshape(1,-1)
-        self.X = np.concatenate((self.X, X_a), axis=0)
-        self.actions = np.concatenate((self.actions, action.reshape(1,-1)), axis=0)
-        self.data = np.concatenate((self.data, user.reshape(1,-1)), axis=0)
-        self.y = np.concatenate((self.y, outcome.reshape(1,-1)), axis=0)
+        self.X.append(X_a.tolist()[0])
+        self.actions.append(action.reshape(1,-1))
+        self.data.append(user.reshape(1,-1))
+        self.y.append(outcome.reshape(1,-1))
         if (self.i % 100 == 0): #Retrain model every 100 observations
-            self.model = MultiHeadNNDoctor(self.n_actions, self.n_outcomes)
-            self.model.fit(self.X, self.y)
+            self.model.fit(np.array(self.X), np.array(self.y).reshape(-1,1))
         return None
 
     def final_analysis(self):
@@ -389,16 +417,17 @@ class NNDoctor:
 
 class MultiHeadNNDoctor(NNDoctor):
     single_head_models = None
+    
 
     def __init__(self,
                  n_actions=1,
                  n_outcomes=1,
-                 layer_sizes=[128, 64, 32, 32, 16],
+                 layer_sizes=[64, 32, 32, 16],
                  batch_size=10,
                  epochs=1,
                  optimizer="sgd",
                  loss="binary_crossentropy",
-                 alpha = 0.001):
+                 alpha = 0.0001):
         super().__init__(n_actions = n_actions,
                          n_outcomes = n_outcomes,
                          layer_sizes = layer_sizes,
@@ -407,7 +436,7 @@ class MultiHeadNNDoctor(NNDoctor):
                          optimizer = optimizer,
                          loss = loss,
                          alpha = alpha)
-        self.n_heads = 5
+        self.n_heads = 10
 
     def build_network(self, X, y):
         input = Input(shape=X.shape[1:])
@@ -429,16 +458,15 @@ class MultiHeadNNDoctor(NNDoctor):
         model.compile(loss=self.loss,
                       optimizer=self.optimizer,
                       metrics=['accuracy'])
-        return model, single_head_models
+        self.model = model
+        self.single_head_models = single_head_models
 
     def fit(self, X, y):
-        self.model, self.single_head_models = self.build_network(X, y)
         # Bootstrap n_heads samples from X,y and train one head on each sample
-        for e in range(self.epochs):
-            train_order = np.random.randint(self.n_heads, size=self.n_heads)
-            for n in train_order:
-                randlist = np.random.randint(X.shape[0], size=X.shape[0])
-                self.single_head_models[n].fit(X[randlist], y[randlist], epochs=1, batch_size=self.batch_size, verbose=0)
+        train_order = np.random.randint(self.n_heads, size=self.n_heads)
+        for n in train_order:
+            randlist = np.random.randint(X.shape[0], size=X.shape[0])
+            self.single_head_models[n].fit(X[randlist], y[randlist], epochs=1, batch_size=self.batch_size, verbose=0)
 
     def predict(self, X):
         return self.model.predict(X)

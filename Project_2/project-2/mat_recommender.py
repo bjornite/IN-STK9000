@@ -12,7 +12,7 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.decomposition import PCA
 
 
-class HistoricalRecommender:
+class HistoricalRecommender2:
 
     model = None
     pca = None
